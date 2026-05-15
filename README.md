@@ -16,7 +16,7 @@
 
 ```bash
 # 1. Create conda environment
-conda create -n ils4gas python=3.11 nodejs=20 numpy scipy rdkit openbabel -y
+conda create -n ils4gas python=3.11 nodejs=20 numpy scipy rdkit openbabel tiktoken -y
 conda activate ils4gas
 
 # 2. Clone the repository

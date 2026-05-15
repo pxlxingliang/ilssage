@@ -8,6 +8,7 @@ def main():
 
     parser = argparse.ArgumentParser(prog="ils4gas")
     parser.add_argument("--version", action="store_true", help="Print version")
+    parser.add_argument("--session", "-s", type=str, default=None, help="Load a specific session on startup (TUI mode)")
     sub = parser.add_subparsers(dest="mode", title="modes")
 
     # ---- Web mode ----
@@ -47,7 +48,7 @@ def main():
     else:
         # Default: TUI mode
         from backend.tui.cli import run_tui
-        run_tui()
+        run_tui(session_id=args.session)
 
 
 if __name__ == "__main__":

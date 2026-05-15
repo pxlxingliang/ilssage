@@ -96,8 +96,9 @@ class ChatScreen(Screen):
         Binding("escape", "handle_escape", "Cancel/Esc"),
     ]
 
-    def __init__(self):
+    def __init__(self, load_session_id=None):
         super().__init__()
+        self._load_session_id = load_session_id
         self._llm = LLMService()
         self._sess = SessionService()
         self._tool_registry = load_tools_from_mcp_modules()
@@ -120,11 +121,14 @@ class ChatScreen(Screen):
         )
 
     def compose(self):
-        sess = self._sess.create_session(
-            model_provider=self._llm.get_current_model().get("provider", ""),
-            model_name=self._llm.get_current_model().get("id", ""),
-        )
-        self._session_id = sess["id"]
+        if self._load_session_id and self._sess.get_session(self._load_session_id):
+            self._session_id = self._load_session_id
+        else:
+            sess = self._sess.create_session(
+                model_provider=self._llm.get_current_model().get("provider", ""),
+                model_name=self._llm.get_current_model().get("id", ""),
+            )
+            self._session_id = sess["id"]
         model_name = self._llm.get_current_model().get("name", "?")
         yield Header()
         yield MessageHistory(id="history")
@@ -138,6 +142,34 @@ class ChatScreen(Screen):
 
     def on_mount(self):
         self.query_one("#chat-input", Input).focus()
+        if self._load_session_id and self._session_id == self._load_session_id:
+            history = self.query_one("#history", MessageHistory)
+            msgs = self._sess.get_messages(self._session_id)
+            i = 0
+            while i < len(msgs):
+                msg = msgs[i]
+                role = msg["role"]
+                content = msg["content"]
+                if role == "tool":
+                    i += 1
+                    continue
+                if role == "assistant" and msg.get("tool_calls"):
+                    if content:
+                        history.add_message(role, content)
+                    for tc in msg["tool_calls"]:
+                        tc_name = tc.get("function", {}).get("name", "?")
+                        tc_args = tc.get("function", {}).get("arguments", "")
+                        tc_id = tc.get("id", "")
+                        tc_result = ""
+                        for j in range(i + 1, len(msgs)):
+                            if msgs[j]["role"] == "tool" and msgs[j].get("tool_call_id") == tc_id:
+                                tc_result = msgs[j]["content"]
+                                break
+                        history.add_tool_call(tc_name, tc_args, tc_result)
+                    i += 1
+                    continue
+                history.add_message(role, content)
+                i += 1
 
     # ── command dropdown ──────────────────────────────────
 
@@ -255,6 +287,7 @@ class ChatScreen(Screen):
 
         if cmd in ("/exit", "/quit"):
             history.add_message("system", "Goodbye!")
+            self.app.session_id = self._session_id
             self.app.exit()
 
         elif cmd == "/help":
@@ -342,6 +375,7 @@ class ChatScreen(Screen):
         self._update_status(f"tokens: {prompt_tokens:,}/{context_limit // 1000}K")
 
         accumulated = ""
+        segment_accumulated = ""
         tool_calls: list[dict] = []
         done_received = False
 
@@ -349,7 +383,8 @@ class ChatScreen(Screen):
             async for event in agent.stream_run(messages):
                 if event.type == AgentEventType.CONTENT_CHUNK:
                     accumulated += event.data["text"]
-                    history.update_last(accumulated)
+                    segment_accumulated += event.data["text"]
+                    history.update_last(segment_accumulated)
 
                 elif event.type == AgentEventType.TOOL_CALL_START:
                     tool_name = event.data.get("tool_name", "?")
@@ -362,11 +397,14 @@ class ChatScreen(Screen):
                             "arguments": event.data.get("args", ""),
                         },
                     })
+                    segment_accumulated = ""
+                    history.add_tool_call(tool_name, event.data.get("args", ""))
                     thinking.update(f"calling {tool_name}...")
 
                 elif event.type == AgentEventType.TOOL_CALL_END:
                     if tool_calls:
                         tool_calls[-1]["_result"] = event.data.get("result", "")
+                    history.update_last_tool_result(event.data.get("result", ""))
                     thinking.update("thinking...")
 
                 elif event.type == AgentEventType.ERROR:

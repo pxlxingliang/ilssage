@@ -3,6 +3,17 @@ from backend.tui.screen import ChatScreen
 
 
 class ILS4GASApp(App):
+    def __init__(self, session_id=None, **kwargs):
+        super().__init__(**kwargs)
+        self._session_arg = session_id
+        self.session_id = None
+
+    def action_quit(self):
+        screen = self.screen
+        if hasattr(screen, '_session_id'):
+            self.session_id = screen._session_id
+        self.exit()
+
     CSS = """
     Screen {
         background: #ffffff;
@@ -32,6 +43,22 @@ class ILS4GASApp(App):
     }
     #thinking {
         color: #6366f1;
+    }
+    #history Collapsible {
+        border: solid #c7d2fe;
+        margin: 1 0;
+    }
+    #history Collapsible:focus-within {
+        border: solid #6366f1;
+    }
+    #history CollapsibleTitle {
+        color: #4f46e5;
+    }
+    #history CollapsibleTitle:hover {
+        background: #eef2ff;
+    }
+    #history Contents {
+        background: #f5f3ff;
     }
     ListView {
         background: #ffffff;
@@ -73,4 +100,4 @@ class ILS4GASApp(App):
     ]
 
     def on_mount(self):
-        self.push_screen(ChatScreen())
+        self.push_screen(ChatScreen(load_session_id=self._session_arg))
