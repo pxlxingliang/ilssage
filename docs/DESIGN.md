@@ -218,10 +218,11 @@ ils4gas/
 | [01-core-design-09.md](./01-core-design-09.md) | 4.9 | 异步工具执行器设计 |
 | [01-core-design-10.md](./01-core-design-10.md) | 4.10 | Agent评估体系设计 |
 | [01-core-design-11.md](./01-core-design-11.md) | 4.11 | LLM服务设计 |
+| [01-core-design-12.md](./01-core-design-12.md) | 4.12 | TUI终端界面设计 |
 
 ---
 
-**文档版本：** v2.2  
+**文档版本：** v2.3  
 **创建日期：** 2024-01-15  
 **最后更新：** 2026-05-18  
 **作者：** AI Assistant
