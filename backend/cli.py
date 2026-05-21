@@ -9,6 +9,10 @@ def main():
     parser = argparse.ArgumentParser(prog="ils4gas")
     parser.add_argument("--version", action="store_true", help="Print version")
     parser.add_argument("--session", "-s", type=str, default=None, help="Load a specific session on startup (TUI mode)")
+    parser.add_argument(
+        "--behavior", "-b", choices=["react", "a2a"], default="react",
+        help="Agent behavior: react (default) or a2a (agent-to-agent)",
+    )
     sub = parser.add_subparsers(dest="mode", title="modes")
 
     # ---- Web mode ----
@@ -35,16 +39,21 @@ def main():
         print(f"ILS4GAS v{version('ils4gas')}")
         return
 
-    if args.mode == "web":
-        from backend.main import run_web
-        run_web(port=args.port, host=args.host)
-    elif args.mode == "mcp":
+    if args.mode == "mcp":
         from backend.mcp_server.server import run_mcp
         run_mcp(
             transport=args.transport,
             port=args.port,
             host=args.host,
         )
+        return
+
+    from backend.deps import bootstrap
+    bootstrap(behavior=args.behavior)
+
+    if args.mode == "web":
+        from backend.api.main import run_web
+        run_web(port=args.port, host=args.host)
     else:
         # Default: TUI mode
         from backend.tui.cli import run_tui

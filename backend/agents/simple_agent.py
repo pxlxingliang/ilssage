@@ -1,4 +1,4 @@
-from typing import AsyncIterator, Dict, List
+from typing import AsyncIterator, Dict, List, Optional
 
 from backend.core.agent import BaseAgent, AgentState
 from backend.core.events import AgentEvent, AgentEventType
@@ -6,26 +6,30 @@ from backend.core.token_counter import count_tokens
 
 
 class SimpleAgent(BaseAgent):
-    async def run(self, messages: List[Dict]) -> str:
+    async def run(
+        self, messages: List[Dict], session_id: Optional[str] = None
+    ) -> str:
+        self._current_session_id = session_id
         self._state = AgentState.RUNNING
         try:
-            result = await self.llm.ainvoke(messages)
+            result = await self.provider.ainvoke(messages)
             return result
         finally:
             self._state = AgentState.IDLE
 
-    async def stream_run(self, messages: List[Dict]) -> AsyncIterator[AgentEvent]:
+    async def stream_run(
+        self, messages: List[Dict], session_id: Optional[str] = None
+    ) -> AsyncIterator[AgentEvent]:
+        self._current_session_id = session_id
         self._state = AgentState.RUNNING
-        provider = self.llm.get_provider()
-        model_name = provider.model_name
 
         system_messages = [{"role": "system", "content": self.system_prompt}]
         full_messages = system_messages + messages
-        prompt_tokens = count_tokens(full_messages, model_name)
+        prompt_tokens = count_tokens(full_messages, self.provider.model_name)
 
         try:
             accumulated = ""
-            async for chunk in self.llm.astream_invoke(messages):
+            async for chunk in self.provider.astream_invoke(messages):
                 if self._state == AgentState.PAUSED:
                     break
                 accumulated += chunk
@@ -37,7 +41,7 @@ class SimpleAgent(BaseAgent):
                 "full_text": accumulated,
                 "prompt_tokens": prompt_tokens,
             }
-            usage = provider.last_usage
+            usage = self.provider.last_usage
             if usage:
                 done_data["usage"] = usage.to_dict()
             yield AgentEvent(

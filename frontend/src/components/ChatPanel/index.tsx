@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { useLocale } from "../../hooks/useLocale";
+import { useWebSocket } from "../../hooks/useWebSocket";
 import { useStore } from "../../store";
 
 interface TokenUsage {
@@ -100,9 +101,9 @@ export function ChatPanel() {
   const [streaming, setStreaming] = useState(false);
   const [streamingSegments, setStreamingSegments] = useState<Segment[]>([]);
   const messagesEnd = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
   const skipHistory = useRef(false);
-  const pendingUsageRef = useRef<TokenUsage | undefined>(undefined);
+
+  const { send: wsSend, on } = useWebSocket();
 
   const estimateInputTokens = (text: string) => {
     let cjk = 0;
@@ -130,12 +131,7 @@ export function ChatPanel() {
       skipHistory.current = false;
       return;
     }
-    fetch(`/api/v1/chat/${currentSessionId}/history`)
-      .then((r) => r.json())
-      .then((d) => {
-        setMessages(buildMessagesFromApi(d.messages || []));
-      })
-      .catch(() => {});
+    wsSend({ type: "history", session_id: currentSessionId });
   };
 
   useEffect(() => {
@@ -146,185 +142,108 @@ export function ChatPanel() {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingSegments]);
 
+  const currentSessionIdRef = useRef(currentSessionId);
+  currentSessionIdRef.current = currentSessionId;
+
   const messageQueueRef = useRef<string[]>([]);
-
-  const doStream = async (text: string, sid: string) => {
-    setStreamingSegments([]);
-    setStreaming(true);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const showError = (msg: string) => {
-      setMessages((prev) => [
-        ...prev,
-        { id: `err_${Date.now()}`, role: "system", segments: [{ type: "text", content: msg }], isError: true },
-      ]);
-    };
-
-    try {
-      const resp = await fetch(`/api/v1/chat/${sid}/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
-        signal: controller.signal,
-      });
-
-      if (!resp.ok) {
-        showError(`HTTP ${resp.status}: ${resp.statusText}`);
-        return;
-      }
-
-      const reader = resp.body?.getReader();
-      if (!reader) return;
-
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = line.slice(6);
-          if (data === "[DONE]") {
-            setStreamingSegments((prev) => {
-              if (prev.length > 0) {
-                const usage = pendingUsageRef.current;
-                pendingUsageRef.current = undefined;
-                setMessages((msgs) => [
-                  ...msgs,
-                  {
-                    id: `assistant_${Date.now()}`,
-                    role: "assistant",
-                    segments: prev,
-                    tokenUsage: usage,
-                  },
-                ]);
-              }
-              return [];
-            });
-            break;
-          }
-          try {
-            const parsed = JSON.parse(data);
-
-            switch (parsed.type) {
-              case "content_chunk":
-                if (parsed.text) {
-                  setStreamingSegments((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last && last.type === "text") {
-                      const updated = [...prev];
-                      updated[updated.length - 1] = {
-                        ...last,
-                        content: (last as TextSeg).content + parsed.text,
-                      };
-                      return updated;
-                    }
-                    return [...prev, { type: "text", content: parsed.text } as TextSeg];
-                  });
-                }
-                break;
-
-              case "tool_call_start":
-                setStreamingSegments((prev) => [
-                  ...prev,
-                  {
-                    type: "tool_call",
-                    tool_name: parsed.tool_name,
-                    args: parsed.args,
-                    result: "",
-                  } as ToolCallSeg,
-                ]);
-                break;
-
-              case "tool_call_end":
-                setStreamingSegments((prev) =>
-                  prev.map((seg) =>
-                    seg.type === "tool_call" &&
-                    (seg as ToolCallSeg).tool_name === parsed.tool_name &&
-                    !(seg as ToolCallSeg).result
-                      ? { ...seg, result: parsed.result } as ToolCallSeg
-                      : seg
-                  )
-                );
-                break;
-
-              case "done":
-                if (parsed.prompt_tokens != null || parsed.usage) {
-                  pendingUsageRef.current = {
-                    prompt_tokens: parsed.prompt_tokens ?? parsed.usage?.prompt_tokens ?? 0,
-                    completion_tokens: parsed.usage?.completion_tokens ?? 0,
-                    total_tokens: parsed.usage?.total_tokens ?? 0,
-                  };
-                }
-                setStreamingSegments((prev) => {
-                  if (prev.length > 0) {
-                    const usage = pendingUsageRef.current;
-                    pendingUsageRef.current = undefined;
-                    setMessages((msgs) => [
-                      ...msgs,
-                      {
-                        id: `assistant_${Date.now()}`,
-                        role: "assistant",
-                        segments: prev,
-                        tokenUsage: usage,
-                      },
-                    ]);
-                  }
-                  return [];
-                });
-                break;
-
-              case "error":
-                const errMsg = isAuthError(parsed.message)
-                  ? t.error.auth
-                  : parsed.message;
-                showError(errMsg);
-                break;
-            }
-          } catch {}
-        }
-      }
-    } catch (err: any) {
-      if (err.name === "AbortError") {
-        setStreamingSegments((prev) => {
-          if (prev.length > 0) {
-            setMessages((msgs) => [
-              ...msgs,
-              {
-                id: `assistant_${Date.now()}`,
-                role: "assistant",
-                segments: [...prev, { type: "text", content: `\n\n*(${t.chat.truncated})*` } as TextSeg],
-              },
-            ]);
-          }
-          return [];
-        });
-        return;
-      }
-      if (err.message?.includes("Failed to fetch") || err.name === "TypeError") {
-        showError(t.error.network);
-      } else {
-        showError(`${t.error.unknown}: ${err.message}`);
-      }
-    } finally {
-      setStreaming(false);
-      abortRef.current = null;
-      flushQueue();
-    }
-  };
 
   const flushQueue = () => {
     if (messageQueueRef.current.length > 0) {
       const next = messageQueueRef.current.shift()!;
-      doStream(next, currentSessionId!);
+      doStream(next);
     }
   };
+
+  const doStream = (text: string) => {
+    const sid = currentSessionIdRef.current;
+    if (!sid) return;
+    setStreamingSegments([]);
+    setStreaming(true);
+    wsSend({ type: "send", content: text, session_id: sid });
+  };
+
+  const stop = () => {
+    messageQueueRef.current = [];
+    wsSend({ type: "cancel" });
+  };
+
+  useEffect(() => {
+    const unsubs = [
+      on("history", (data: any) => {
+        setMessages(buildMessagesFromApi(data.messages || []));
+      }),
+      on("session_created", (data: any) => {
+        if (data.session_id) {
+          setCurrentSessionId(data.session_id);
+          skipHistory.current = true;
+        }
+      }),
+      on("content_chunk", (data: any) => {
+        const text = data.text || "";
+        setStreamingSegments((prev) => {
+          const last = prev[prev.length - 1];
+          if (last && last.type === "text") {
+            const updated = [...prev];
+            updated[updated.length - 1] = { ...last, content: (last as TextSeg).content + text } as TextSeg;
+            return updated;
+          }
+          return [...prev, { type: "text", content: text } as TextSeg];
+        });
+      }),
+      on("tool_call_start", (data: any) => {
+        setStreamingSegments((prev) => [
+          ...prev,
+          { type: "tool_call", tool_name: data.tool_name || "", args: data.args || "", result: "" } as ToolCallSeg,
+        ]);
+      }),
+      on("tool_call_end", (data: any) => {
+        setStreamingSegments((prev) =>
+          prev.map((seg) =>
+            seg.type === "tool_call" && (seg as ToolCallSeg).tool_name === data.tool_name && !(seg as ToolCallSeg).result
+              ? ({ ...seg, result: data.result || "" } as ToolCallSeg)
+              : seg
+          )
+        );
+      }),
+      on("done", (data: any) => {
+        if (data.cancelled) {
+          setStreamingSegments((prev) => {
+            if (prev.length > 0) {
+              setMessages((msgs) => [
+                ...msgs,
+                { id: `assistant_${Date.now()}`, role: "assistant", segments: [...prev, { type: "text", content: `\n\n*(${t.chat.truncated})*` } as TextSeg] },
+              ]);
+            }
+            return [];
+          });
+          setStreaming(false);
+          flushQueue();
+          return;
+        }
+
+        const usage: TokenUsage | undefined = data.usage
+          ? { prompt_tokens: data.usage.prompt_tokens || 0, completion_tokens: data.usage.completion_tokens || 0, total_tokens: data.usage.total_tokens || 0 }
+          : undefined;
+
+        setStreamingSegments((prev) => {
+          if (prev.length > 0) {
+            setMessages((msgs) => [...msgs, { id: `assistant_${Date.now()}`, role: "assistant", segments: prev, tokenUsage: usage }]);
+          }
+          return [];
+        });
+        setStreaming(false);
+        flushQueue();
+      }),
+      on("error", (data: any) => {
+        const msg = data.message || "";
+        setMessages((prev) => [
+          ...prev,
+          { id: `err_${Date.now()}`, role: "system", segments: [{ type: "text", content: isAuthError(msg) ? t.error.auth : msg }], isError: true },
+        ]);
+      }),
+    ];
+    return () => unsubs.forEach((fn: any) => fn());
+  }, [on, t, setCurrentSessionId]);
 
   const send = async () => {
     const text = input.trim();
@@ -367,12 +286,7 @@ export function ChatPanel() {
       return;
     }
 
-    doStream(text, sid);
-  };
-
-  const stop = () => {
-    messageQueueRef.current = [];
-    abortRef.current?.abort();
+    doStream(text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

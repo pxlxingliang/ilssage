@@ -1,5 +1,6 @@
+import inspect
 import json
-from typing import AsyncIterator, Dict, List
+from typing import AsyncIterator, Dict, List, Optional
 
 from backend.core.agent import BaseAgent, AgentState
 from backend.core.events import AgentEvent, AgentEventType
@@ -18,18 +19,39 @@ class ReActAgent(BaseAgent):
             },
         )
 
-    async def run(self, messages: List[Dict]) -> str:
+    async def _execute_tool(
+        self, tool_name: str, arguments: str
+    ) -> str:
+        if not self.tools:
+            return "No tools configured"
+        tool_info = self.tools.get(tool_name)
+        if not tool_info:
+            return f"Tool '{tool_name}' not found"
+        try:
+            args = json.loads(arguments) if arguments else {}
+            result = tool_info.execute(**args)
+            if inspect.isawaitable(result):
+                result = await result
+            if isinstance(result, (dict, list)):
+                return json.dumps(result, ensure_ascii=False, default=str)
+            return str(result)
+        except Exception as e:
+            return f"Error calling tool '{tool_name}': {e}"
+
+    async def run(
+        self, messages: List[Dict], session_id: Optional[str] = None
+    ) -> str:
+        self._current_session_id = session_id
         self._state = AgentState.RUNNING
-        tools = self.llm.get_openai_tools()
+        tools = self.tools.to_openai_tools() if self.tools else None
         full_messages = [{"role": "system", "content": self.system_prompt}]
         full_messages += messages
         loop_messages = list(full_messages)
 
         try:
             while self._state == AgentState.RUNNING:
-                provider = self.llm.get_provider()
-                response = await provider.async_client.chat.completions.create(
-                    model=provider.model_name,
+                response = await self.provider.async_client.chat.completions.create(
+                    model=self.provider.model_name,
                     messages=loop_messages,
                     tools=tools if tools else None,
                     tool_choice="auto" if tools else None,
@@ -57,7 +79,7 @@ class ReActAgent(BaseAgent):
 
                     for tc in msg.tool_calls:
                         tool_name = tc.function.name
-                        result = self._execute_tool_sync(
+                        result = await self._execute_tool(
                             tool_name, tc.function.arguments
                         )
                         loop_messages.append({
@@ -72,29 +94,17 @@ class ReActAgent(BaseAgent):
         finally:
             self._state = AgentState.IDLE
 
-    def _execute_tool_sync(
-        self, tool_name: str, arguments: str
-    ) -> str:
-        if not self.tools:
-            return "No tools configured"
-        tool_info = self.tools.get(tool_name)
-        if not tool_info:
-            return f"Tool '{tool_name}' not found"
-        try:
-            args = json.loads(arguments) if arguments else {}
-            result = tool_info.call(**args)
-            return result
-        except Exception as e:
-            return f"Error calling tool '{tool_name}': {e}"
-
-    async def stream_run(self, messages: List[Dict]) -> AsyncIterator[AgentEvent]:
+    async def stream_run(
+        self, messages: List[Dict], session_id: Optional[str] = None
+    ) -> AsyncIterator[AgentEvent]:
+        self._current_session_id = session_id
         self._state = AgentState.RUNNING
-        tools = self.llm.get_openai_tools()
+        tools = self.tools.to_openai_tools() if self.tools else None
         full_messages = [{"role": "system", "content": self.system_prompt}]
         full_messages += messages
         loop_messages = list(full_messages)
 
-        provider = self.llm.get_provider()
+        provider = self.provider
         model_name = provider.model_name
         prompt_tokens = count_tokens(full_messages, model_name)
 
@@ -193,7 +203,7 @@ class ReActAgent(BaseAgent):
                             },
                         )
 
-                        result = self._execute_tool_sync(
+                        result = await self._execute_tool(
                             tool_name, func_info["arguments"]
                         )
                         yield self._make_tool_event(tool_name, result)

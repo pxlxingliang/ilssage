@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from backend.api.deps import get_session_service, get_llm_service
+from backend.deps import get_session_service, get_llm_service
 
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 

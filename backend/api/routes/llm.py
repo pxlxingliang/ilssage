@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from backend.api.deps import get_llm_service
+from backend.deps import get_llm_service
 
 router = APIRouter(prefix="/api/v1/llm", tags=["llm"])
 

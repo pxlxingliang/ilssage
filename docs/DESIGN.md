@@ -154,7 +154,8 @@
 ils4gas/
 ├── backend/
 │   ├── core/           # 核心框架层：Agent基类、LLM接口、消息系统、配置管理、上下文工程等
-│   ├── agents/         # Agent实现层：各种Agent行为实现和角色模板
+│   ├── agents/         # Agent实现层：各种Agent行为实现
+│   ├── roles/           # Agent角色定义：能力声明(AgentCapability) + 工具工厂
 │   ├── tools/          # 工具系统层：Tool基类、MCP适配器、工具注册表、内置工具等
 │   ├── memory/         # 记忆与知识层：短期记忆、长期记忆、向量存储、RAG检索等
 │   ├── services/       # 业务服务层：LLM服务、会话服务、MCP服务、记忆服务等

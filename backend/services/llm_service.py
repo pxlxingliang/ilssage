@@ -6,9 +6,10 @@ from backend.tools.registry import ToolRegistry
 
 class LLMService:
     def __init__(self, config_path: Optional[str] = None,
-                 tool_registry: Optional[ToolRegistry] = None):
+                 tool_registry: Optional[ToolRegistry] = None,
+                 model_id: Optional[str] = None):
         self.config = load_config(config_path)
-        self.current_model = self.config.get("currentModel", "")
+        self.current_model = model_id or self.config.get("currentModel", "")
         self._providers: Dict[str, LLMProvider] = {}
         self.tool_registry = tool_registry
 

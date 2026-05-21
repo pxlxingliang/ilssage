@@ -14,6 +14,22 @@ class ILS4GASApp(App):
             self.session_id = screen._session_id
         self.exit()
 
+    async def on_mount(self):
+        from backend.deps import connect_services, get_llm_service, get_mcp_service
+
+        await connect_services()
+
+        llm = get_llm_service()
+        mcp = get_mcp_service()
+        current = llm.get_current_model()
+        mcp_entries = llm.config.get("mcp_servers", [])
+        external_tools = len(mcp.list_all_tools()) if mcp else 0
+        print(f"  tools: {len(llm.tool_registry)} built-in tools loaded")
+        print(f"  model: {current['id']}")
+        print(f"  mcp  : {len(mcp_entries)} external servers, {external_tools} external tools")
+
+        self.push_screen(ChatScreen(load_session_id=self._session_arg))
+
     CSS = """
     Screen {
         background: #ffffff;

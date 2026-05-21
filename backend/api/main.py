@@ -1,7 +1,6 @@
 import getpass
 import os
 import socket
-import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -10,40 +9,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import deps
-from backend.core.context import WorkspaceContext
-from backend.services.llm_service import LLMService
-from backend.services.session_service import SessionService
-from backend.services.mcp_service import MCPService
-from backend.tools.mcp_adapter import MCPServerConfig
-from backend.tools.loader import load_tools_from_mcp_modules
-from backend.tools.builtin import register_builtin_tools
+from backend.deps import connect_services, disconnect_services, get_llm_service, get_mcp_service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from backend.core.env import EnvManager
-    EnvManager.init()
+    await connect_services()
 
-    # Initialize workspace files on first launch
-    WorkspaceContext.init_workspace()
-
-    # Load built-in MCP tools for web chat
-    tool_registry = load_tools_from_mcp_modules()
-    tool_registry.extend(register_builtin_tools())
-    print(f"  tools: {len(tool_registry)} built-in tools loaded")
-
-    deps.llm_service = LLMService(tool_registry=tool_registry)
-    deps.session_service = SessionService()
-
-    # MCP servers from config (external servers to connect to)
-    mcp_entries = deps.llm_service.config.get("mcp_servers", [])
-    deps.mcp_service = MCPService.from_config_entries(mcp_entries)
-    await deps.mcp_service.connect_all()
-
-    current = deps.llm_service.get_current_model()
-    external_tools = len(deps.mcp_service.list_all_tools())
+    llm = get_llm_service()
+    mcp = get_mcp_service()
+    current = llm.get_current_model()
+    mcp_entries = llm.config.get("mcp_servers", [])
+    external_tools = len(mcp.list_all_tools()) if mcp else 0
     port = os.environ.get("ILS4GAS_WEB_PORT", "8789")
+    print(f"  tools: {len(llm.tool_registry)} built-in tools loaded")
     print(f"  model: {current['id']}")
     print(f"  mcp  : {len(mcp_entries)} external servers, {external_tools} external tools")
     print()
@@ -55,7 +34,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    await deps.mcp_service.disconnect_all()
+    await disconnect_services()
 
 
 app = FastAPI(title="ILS4GAS", version="0.1.0", lifespan=lifespan)
@@ -80,7 +59,7 @@ app.include_router(memory.router)
 app.include_router(ws.router)
 
 # Frontend static files
-static_dir = Path(__file__).parent / "static"
+static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():
     app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
 
@@ -105,7 +84,7 @@ def run_web(port: int = None, host: str = None):
     if actual != p:
         print(f"  port {p} in use, using {actual}")
     os.environ["ILS4GAS_WEB_PORT"] = str(actual)
-    uvicorn.run("backend.main:app", host=h, port=actual, reload=False)
+    uvicorn.run("backend.api.main:app", host=h, port=actual, reload=False)
 
 
 if __name__ == "__main__":

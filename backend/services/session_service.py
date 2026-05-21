@@ -98,6 +98,11 @@ class SessionService:
 
     # ── messages ──────────────────────────────────────────────
 
+    def _msg_file(self, session_id: str, agent_name: Optional[str] = None) -> Path:
+        if agent_name:
+            return SESSIONS_DIR / f"{session_id}_sub_{agent_name}.json"
+        return SESSIONS_DIR / f"{session_id}.json"
+
     def add_message(
         self,
         session_id: str,
@@ -106,6 +111,7 @@ class SessionService:
         tool_calls: Optional[List] = None,
         tool_call_id: Optional[str] = None,
         metadata: Optional[Dict] = None,
+        agent_name: Optional[str] = None,
     ) -> Optional[Dict]:
         if not self.get_session(session_id):
             return None
@@ -119,19 +125,52 @@ class SessionService:
         }
         if metadata:
             msg["metadata"] = metadata
-        msg_file = SESSIONS_DIR / f"{session_id}.json"
+        msg_file = self._msg_file(session_id, agent_name)
         messages = _read_json(msg_file) if msg_file.exists() else []
         messages.append(msg)
         _write_json(msg_file, messages)
         self.update_session(session_id)
         return msg
 
-    def get_messages(self, session_id: str, limit: int = 100) -> List[Dict]:
-        msg_file = SESSIONS_DIR / f"{session_id}.json"
+    def get_messages(
+        self, session_id: str, limit: int = 100, agent_name: Optional[str] = None
+    ) -> List[Dict]:
+        msg_file = self._msg_file(session_id, agent_name)
         if not msg_file.exists():
             return []
         messages = _read_json(msg_file)
         return messages[-limit:]
+
+    def build_chat_history(
+        self, session_id: str, limit: int = 100, agent_name: Optional[str] = None
+    ) -> List[Dict]:
+        """
+        Build a chat history list suitable for LLM context, filtering out
+        tool messages and empty assistant messages with only tool calls.
+        
+        Args:
+            session_id: The session ID
+            limit: Maximum number of messages to retrieve
+            agent_name: Optional agent name for sub-sessions
+            
+        Returns:
+            Filtered list of messages in OpenAI chat format
+        """
+        messages = self.get_messages(session_id, limit=limit, agent_name=agent_name)
+        history = []
+        for msg in messages:
+            role = msg["role"]
+            if role == "tool":
+                continue
+            if role == "assistant" and msg.get("tool_calls") and not msg.get("content"):
+                continue
+            entry = {"role": role, "content": msg["content"]}
+            if msg.get("tool_calls"):
+                entry["tool_calls"] = msg["tool_calls"]
+            if msg.get("tool_call_id"):
+                entry["tool_call_id"] = msg["tool_call_id"]
+            history.append(entry)
+        return history
 
 
 def _now() -> str:

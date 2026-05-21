@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from backend.api.deps import get_mcp_service
+from backend.deps import get_mcp_service
 
 router = APIRouter(prefix="/api/v1/mcp", tags=["mcp"])
 
