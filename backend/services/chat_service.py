@@ -1,7 +1,8 @@
 import asyncio
 from typing import AsyncIterator
 
-from backend.deps import get_agent_factory, get_llm_service, get_session_service
+from backend.agents import create_agent
+from backend.deps import get_behavior, get_llm_service, get_session_service
 from backend.core.context import WorkspaceContext
 from backend.core.events import AgentEvent, AgentEventType
 from backend.services.title_service import generate_title
@@ -26,7 +27,6 @@ async def stream_chat(
     """
     sess = get_session_service()
     llm = get_llm_service()
-    agent_factory = get_agent_factory()
 
     if not sess.get_session(session_id):
         raise ValueError(f"Session {session_id} not found")
@@ -35,10 +35,8 @@ async def stream_chat(
     messages.append({"role": "user", "content": user_content})
     sess.add_message(session_id, "user", user_content)
 
-    agent = agent_factory.create(
-        WorkspaceContext().build_system_prompt(),
-        model_id=model_id,
-    )
+    agent = _create_agent()
+    provider = llm.get_provider(model_id or None)
 
     text_accum: list[str] = []
     tool_calls: list[dict] = []
@@ -48,7 +46,7 @@ async def stream_chat(
     cancelled = False
 
     try:
-        async for event in agent.stream_run(messages, session_id=session_id):
+        async for event in agent.stream_run(messages, provider, session_id=session_id):
             yield event
 
             if event.type == AgentEventType.CONTENT_CHUNK:
@@ -139,6 +137,7 @@ async def run_chat(
     persistence, auto title), but returns the full response string directly.
     """
     sess = get_session_service()
+    llm = get_llm_service()
     if not sess.get_session(session_id):
         raise ValueError(f"Session {session_id} not found")
 
@@ -146,14 +145,20 @@ async def run_chat(
     messages.append({"role": "user", "content": user_content})
     sess.add_message(session_id, "user", user_content)
 
-    agent = get_agent_factory().create(
-        WorkspaceContext().build_system_prompt(),
-        model_id=model_id,
-    )
-    response = await agent.run(messages, session_id=session_id)
+    agent = _create_agent()
+    provider = llm.get_provider(model_id or None)
+    response = await agent.run(messages, provider, session_id=session_id)
     sess.add_message(session_id, "assistant", response)
     asyncio.create_task(generate_chat_title(session_id, user_content))
     return response
+
+
+def _create_agent():
+    behavior = get_behavior()
+    return create_agent(
+        behavior,
+        system_prompt=WorkspaceContext().build_system_prompt(),
+    )
 
 
 async def generate_chat_title(session_id: str, user_content: str):

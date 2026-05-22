@@ -9,7 +9,7 @@ from backend.tui.widgets.status_bar import StatusBar
 from backend.tui.widgets.command_dropdown import CommandDropdown
 from backend.tui.chat_handlers import ChatHandlerMixin
 
-from backend.deps import get_llm_service, get_session_service, get_agent_factory
+from backend.deps import get_llm_service, get_session_service
 
 
 class ChatScreen(Screen, ChatHandlerMixin):
@@ -23,7 +23,6 @@ class ChatScreen(Screen, ChatHandlerMixin):
         self._load_session_id = load_session_id
         self._llm = get_llm_service()
         self._sess = get_session_service()
-        self._agent_factory = get_agent_factory()
         self._session_id: str = ""
         self._streaming = False
         self._esc_pressed_at: float = 0.0

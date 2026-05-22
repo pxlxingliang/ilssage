@@ -39,7 +39,10 @@ class ReActAgent(BaseAgent):
             return f"Error calling tool '{tool_name}': {e}"
 
     async def run(
-        self, messages: List[Dict], session_id: Optional[str] = None
+        self,
+        messages: List[Dict],
+        provider,
+        session_id: Optional[str] = None,
     ) -> str:
         self._current_session_id = session_id
         self._state = AgentState.RUNNING
@@ -50,8 +53,8 @@ class ReActAgent(BaseAgent):
 
         try:
             while self._state == AgentState.RUNNING:
-                response = await self.provider.async_client.chat.completions.create(
-                    model=self.provider.model_name,
+                response = await provider.async_client.chat.completions.create(
+                    model=provider.model_name,
                     messages=loop_messages,
                     tools=tools if tools else None,
                     tool_choice="auto" if tools else None,
@@ -95,7 +98,10 @@ class ReActAgent(BaseAgent):
             self._state = AgentState.IDLE
 
     async def stream_run(
-        self, messages: List[Dict], session_id: Optional[str] = None
+        self,
+        messages: List[Dict],
+        provider,
+        session_id: Optional[str] = None,
     ) -> AsyncIterator[AgentEvent]:
         self._current_session_id = session_id
         self._state = AgentState.RUNNING
@@ -104,7 +110,6 @@ class ReActAgent(BaseAgent):
         full_messages += messages
         loop_messages = list(full_messages)
 
-        provider = self.provider
         model_name = provider.model_name
         prompt_tokens = count_tokens(full_messages, model_name)
 

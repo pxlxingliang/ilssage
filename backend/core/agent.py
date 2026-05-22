@@ -18,11 +18,9 @@ class AgentState(str, Enum):
 class BaseAgent(ABC):
     def __init__(
         self,
-        provider: LLMProvider,
         tools: Optional[ToolRegistry] = None,
         system_prompt: Optional[str] = None,
     ):
-        self.provider = provider
         self.tools = tools
         self.system_prompt = system_prompt or "You are a helpful assistant."
         self._state = AgentState.IDLE
@@ -34,13 +32,19 @@ class BaseAgent(ABC):
 
     @abstractmethod
     async def run(
-        self, messages: List[Dict], session_id: Optional[str] = None
+        self,
+        messages: List[Dict],
+        provider: LLMProvider,
+        session_id: Optional[str] = None,
     ) -> str:
         ...
 
     @abstractmethod
     async def stream_run(
-        self, messages: List[Dict], session_id: Optional[str] = None
+        self,
+        messages: List[Dict],
+        provider: LLMProvider,
+        session_id: Optional[str] = None,
     ) -> AsyncIterator[AgentEvent]:
         ...
 

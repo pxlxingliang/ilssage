@@ -1,4 +1,3 @@
-from backend.core.agent_factory import AgentFactory
 from backend.services.llm_service import LLMService
 from backend.services.session_service import SessionService
 from backend.services.mcp_service import MCPService
@@ -6,13 +5,13 @@ from backend.services.mcp_service import MCPService
 _llm_service: LLMService = None  # type: ignore
 _session_service: SessionService = None  # type: ignore
 _mcp_service: MCPService = None  # type: ignore
-_agent_factory: AgentFactory = None  # type: ignore
+_behavior: str = "react"
 
 _BOOTSTRAPPED = False
 
 
 def bootstrap(behavior: str = "react"):
-    global _BOOTSTRAPPED, _llm_service, _session_service, _agent_factory, _mcp_service
+    global _BOOTSTRAPPED, _llm_service, _session_service, _behavior, _mcp_service
     if _BOOTSTRAPPED:
         return
     _BOOTSTRAPPED = True
@@ -26,7 +25,7 @@ def bootstrap(behavior: str = "react"):
     _llm_service.tool_registry = build_manager_tools()
 
     _session_service = SessionService()
-    _agent_factory = AgentFactory(behavior, _llm_service, _session_service)
+    _behavior = behavior
 
     mcp_entries = _llm_service.config.get("mcp_servers", [])
     _mcp_service = MCPService.from_config_entries(mcp_entries)
@@ -59,5 +58,5 @@ def set_mcp_service(service: MCPService):
     _mcp_service = service
 
 
-def get_agent_factory() -> AgentFactory:
-    return _agent_factory
+def get_behavior() -> str:
+    return _behavior

@@ -17,7 +17,6 @@ class ChatHandlerMixin:
 
     _llm = None
     _sess = None
-    _agent_factory = None
     _session_id = ""
     _streaming = False
     _esc_pressed_at = 0.0

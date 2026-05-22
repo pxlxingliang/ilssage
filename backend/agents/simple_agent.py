@@ -7,29 +7,35 @@ from backend.core.token_counter import count_tokens
 
 class SimpleAgent(BaseAgent):
     async def run(
-        self, messages: List[Dict], session_id: Optional[str] = None
+        self,
+        messages: List[Dict],
+        provider,
+        session_id: Optional[str] = None,
     ) -> str:
         self._current_session_id = session_id
         self._state = AgentState.RUNNING
         try:
-            result = await self.provider.ainvoke(messages)
+            result = await provider.ainvoke(messages)
             return result
         finally:
             self._state = AgentState.IDLE
 
     async def stream_run(
-        self, messages: List[Dict], session_id: Optional[str] = None
+        self,
+        messages: List[Dict],
+        provider,
+        session_id: Optional[str] = None,
     ) -> AsyncIterator[AgentEvent]:
         self._current_session_id = session_id
         self._state = AgentState.RUNNING
 
         system_messages = [{"role": "system", "content": self.system_prompt}]
         full_messages = system_messages + messages
-        prompt_tokens = count_tokens(full_messages, self.provider.model_name)
+        prompt_tokens = count_tokens(full_messages, provider.model_name)
 
         try:
             accumulated = ""
-            async for chunk in self.provider.astream_invoke(messages):
+            async for chunk in provider.astream_invoke(messages):
                 if self._state == AgentState.PAUSED:
                     break
                 accumulated += chunk
@@ -41,7 +47,7 @@ class SimpleAgent(BaseAgent):
                 "full_text": accumulated,
                 "prompt_tokens": prompt_tokens,
             }
-            usage = self.provider.last_usage
+            usage = provider.last_usage
             if usage:
                 done_data["usage"] = usage.to_dict()
             yield AgentEvent(
