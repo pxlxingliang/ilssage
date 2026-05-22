@@ -48,14 +48,25 @@ AgentEvaluator
 
 ```
 LLMService(config_path, tool_registry)
-  ├── _load_config() → dict         // 读取 ~/.ils4gas/config.json，解析 ${ENV:VAR}
   ├── get_provider(model_id) → LLMProvider  // 创建/缓存 Provider 实例
   ├── get_openai_tools() → [dict]   // 返回 ToolRegistry 中所有工具的 OpenAI schema
-  ├── switch_model(model_id)         // 切换当前模型
+  ├── switch_model(model_id)         // 切换当前模型（全局状态）
   ├── list_models() → [{id, name, provider, limit}]
   ├── get_current_model() → dict
   ├── invoke / stream_invoke / ainvoke / astream_invoke(messages)  // 委托到 Provider
-  └── tool_registry: ToolRegistry    // 共享的工具注册表
+  ├── tool_registry: ToolRegistry    // 在 bootstrap() 中设置，供全局工具计数
+  └── config: dict                   // 合并的配置（模型 + MCP + 服务器）
+```
+
+注：Agent 不再直接持有 `LLMService`。`AgentFactory.create()` 根据 `model_id` 调用 `get_provider()` 获取 Provider 后注入 Agent，Agent 通过 `self.provider` 直接调用 API。工具 schema 由 Agent 内部通过 `self.tools.to_openai_tools()` 生成，不再经由 LLMService 中转。
+
+**chat_service：** (详见 `backend/services/chat_service.py`) — 新增的聊天编排层
+
+```
+stream_chat(session_id, user_content, *, model_id="") → AsyncIterator[AgentEvent]
+run_chat(session_id, user_content, *, model_id="") → str
+  // 统一的消息构建 → Agent 创建 → 流式/非流式执行 → 持久化 → 标题生成 pipeline
+  // 供 WebSocket、REST SSE、REST、TUI 四种模式共用
 ```
 
 ---

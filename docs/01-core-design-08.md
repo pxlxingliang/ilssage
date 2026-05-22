@@ -8,14 +8,13 @@
 
 ```
 BaseAgent (ABC)
-  ├── 属性: name, llm, system_prompt, tools (ToolRegistry)
+  ├── 属性: provider (LLMProvider), system_prompt, tools (ToolRegistry)
   ├── 状态机: IDLE → RUNNING → PAUSED / ERROR → IDLE
   │
   ├── run(messages) → str                    // 抽象：同步运行
   ├── stream_run(messages) → AsyncIterator   // 抽象：流式运行
   ├── cancel()                               // 中断当前执行
   ├── pause() / resume()                     // 暂停/恢复（保存检查点）
-  └── _execute_tool_sync(name, args) → str   // 同步执行工具
 ```
 
 **SimpleAgent：** (详见 `backend/agents/simple_agent.py`)
@@ -23,8 +22,8 @@ BaseAgent (ABC)
 ```
 SimpleAgent(BaseAgent)
   // 纯 LLM 透传，无工具调用
-  run(messages) → str        // 构建 system prompt + history → LLM invoke → 返回
-  stream_run(messages) → y   // 同上但流式
+  run(messages) → str        // 构建 system prompt + history → provider.ainvoke → 返回
+  stream_run(messages) → y   // 同上但流式 (provider.astream_invoke)
 ```
 
 **ReActAgent：** (详见 `backend/agents/react_agent.py`)
