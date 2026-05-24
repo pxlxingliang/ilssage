@@ -4,7 +4,7 @@ import os
 
 from backend.mcp_server import mcp
 from backend.mcp_server.util.comm import generate_work_path, run_command
-@mcp.tool()
+#@mcp.tool()
 def generate_novel_ions(
     base_molecule_smile: str,
     molecule_type: Literal["cation", "anion"],
@@ -77,7 +77,7 @@ def generate_novel_ions(
     return sorted_csv
 
 
-@mcp.tool()
+#@mcp.tool()
 def predict_binding_energy(
     complex_xyz_path: str,
     part1_xyz_path: str,
