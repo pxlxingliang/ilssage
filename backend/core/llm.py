@@ -3,6 +3,8 @@ from typing import Iterator, List, Dict, Any, Optional, AsyncIterator
 
 from openai import OpenAI, AsyncOpenAI
 
+THINKING_BASE_URLS = {"https://api.deepseek.com"}
+
 
 class ProviderUsage:
     def __init__(
@@ -68,13 +70,28 @@ class OpenAICompatibleProvider(LLMProvider):
     ):
         self._model_name = model_name
         self._context_limit = context_limit
+        self._base_url = (base_url or "").rstrip("/")
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.async_client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         self._last_usage: Optional[ProviderUsage] = None
+        self._last_reasoning: Optional[str] = None
+
+    @property
+    def is_thinking(self) -> bool:
+        return self._base_url in THINKING_BASE_URLS
+
+    def _build_create_kwargs(self, kwargs: dict) -> dict:
+        if not self.is_thinking:
+            return kwargs
+        merged = {"reasoning_effort": "high",
+                  "extra_body": {"thinking": {"type": "enabled"}}}
+        merged.update(kwargs)
+        return merged
 
     def invoke(self, messages: List[Dict], **kwargs) -> str:
         resp = self.client.chat.completions.create(
-            model=self._model_name, messages=messages, **kwargs
+            model=self._model_name, messages=messages,
+            **self._build_create_kwargs(kwargs),
         )
         if resp.usage:
             self._last_usage = ProviderUsage(
@@ -82,15 +99,20 @@ class OpenAICompatibleProvider(LLMProvider):
                 completion_tokens=resp.usage.completion_tokens,
                 total_tokens=resp.usage.total_tokens,
             )
-        return resp.choices[0].message.content or ""
+        msg = resp.choices[0].message
+        if self.is_thinking:
+            self._last_reasoning = getattr(msg, "reasoning_content", None)
+        return msg.content or ""
 
     def stream_invoke(self, messages: List[Dict], **kwargs) -> Iterator[str]:
         stream_kwargs = {**kwargs}
         if "stream_options" not in stream_kwargs:
             stream_kwargs["stream_options"] = {"include_usage": True}
         stream = self.client.chat.completions.create(
-            model=self._model_name, messages=messages, stream=True, **stream_kwargs
+            model=self._model_name, messages=messages, stream=True,
+            **self._build_create_kwargs(stream_kwargs),
         )
+        reasoning_parts: list[str] = []
         for chunk in stream:
             if chunk.usage:
                 self._last_usage = ProviderUsage(
@@ -101,12 +123,17 @@ class OpenAICompatibleProvider(LLMProvider):
             if not chunk.choices:
                 continue
             delta = chunk.choices[0].delta
+            if hasattr(delta, "reasoning_content") and delta.reasoning_content:
+                reasoning_parts.append(delta.reasoning_content)
             if delta.content:
                 yield delta.content
+        if reasoning_parts:
+            self._last_reasoning = "".join(reasoning_parts)
 
     async def ainvoke(self, messages: List[Dict], **kwargs) -> str:
         resp = await self.async_client.chat.completions.create(
-            model=self._model_name, messages=messages, **kwargs
+            model=self._model_name, messages=messages,
+            **self._build_create_kwargs(kwargs),
         )
         if resp.usage:
             self._last_usage = ProviderUsage(
@@ -114,7 +141,10 @@ class OpenAICompatibleProvider(LLMProvider):
                 completion_tokens=resp.usage.completion_tokens,
                 total_tokens=resp.usage.total_tokens,
             )
-        return resp.choices[0].message.content or ""
+        msg = resp.choices[0].message
+        if self.is_thinking:
+            self._last_reasoning = getattr(msg, "reasoning_content", None)
+        return msg.content or ""
 
     async def astream_invoke(
         self, messages: List[Dict], **kwargs
@@ -123,8 +153,10 @@ class OpenAICompatibleProvider(LLMProvider):
         if "stream_options" not in stream_kwargs:
             stream_kwargs["stream_options"] = {"include_usage": True}
         stream = await self.async_client.chat.completions.create(
-            model=self._model_name, messages=messages, stream=True, **stream_kwargs
+            model=self._model_name, messages=messages, stream=True,
+            **self._build_create_kwargs(stream_kwargs),
         )
+        reasoning_parts: list[str] = []
         async for chunk in stream:
             if chunk.usage:
                 self._last_usage = ProviderUsage(
@@ -135,8 +167,12 @@ class OpenAICompatibleProvider(LLMProvider):
             if not chunk.choices:
                 continue
             delta = chunk.choices[0].delta
+            if hasattr(delta, "reasoning_content") and delta.reasoning_content:
+                reasoning_parts.append(delta.reasoning_content)
             if delta.content:
                 yield delta.content
+        if reasoning_parts:
+            self._last_reasoning = "".join(reasoning_parts)
 
     @property
     def model_name(self) -> str:

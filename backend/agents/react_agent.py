@@ -56,11 +56,14 @@ class ReActAgent(BaseAgent):
                 response = await provider.async_client.chat.completions.create(
                     model=provider.model_name,
                     messages=loop_messages,
-                    tools=tools if tools else None,
-                    tool_choice="auto" if tools else None,
+                    **provider._build_create_kwargs({
+                        "tools": tools if tools else None,
+                        "tool_choice": "auto" if tools else None,
+                    }),
                 )
                 choice = response.choices[0]
                 msg = choice.message
+                reasoning_content = getattr(msg, "reasoning_content", None)
 
                 if msg.tool_calls:
                     tool_calls_list = [
@@ -74,11 +77,14 @@ class ReActAgent(BaseAgent):
                         }
                         for tc in msg.tool_calls
                     ]
-                    loop_messages.append({
+                    assistant_msg: dict = {
                         "role": "assistant",
                         "content": None,
                         "tool_calls": tool_calls_list,
-                    })
+                    }
+                    if reasoning_content:
+                        assistant_msg["reasoning_content"] = reasoning_content
+                    loop_messages.append(assistant_msg)
 
                     for tc in msg.tool_calls:
                         tool_name = tc.function.name
@@ -121,10 +127,12 @@ class ReActAgent(BaseAgent):
                 stream = await provider.async_client.chat.completions.create(
                     model=model_name,
                     messages=loop_messages,
-                    tools=tools if tools else None,
-                    tool_choice="auto" if tools else None,
-                    stream=True,
-                    stream_options={"include_usage": True},
+                    **provider._build_create_kwargs({
+                        "tools": tools if tools else None,
+                        "tool_choice": "auto" if tools else None,
+                        "stream": True,
+                        "stream_options": {"include_usage": True},
+                    }),
                 )
 
                 tool_calls_acc: dict = {}
@@ -189,11 +197,14 @@ class ReActAgent(BaseAgent):
 
                 if tool_calls_acc:
                     tool_call_list = list(tool_calls_acc.values())
-                    loop_messages.append({
+                    assistant_msg = {
                         "role": "assistant",
                         "content": None,
                         "tool_calls": tool_call_list,
-                    })
+                    }
+                    if reasoning_content:
+                        assistant_msg["reasoning_content"] = reasoning_content
+                    loop_messages.append(assistant_msg)
 
                     for tc in tool_call_list:
                         func_info = tc["function"]

@@ -112,6 +112,7 @@ class SessionService:
         tool_call_id: Optional[str] = None,
         metadata: Optional[Dict] = None,
         agent_name: Optional[str] = None,
+        reasoning_content: Optional[str] = None,
     ) -> Optional[Dict]:
         if not self.get_session(session_id):
             return None
@@ -121,6 +122,7 @@ class SessionService:
             "content": content,
             "tool_calls": tool_calls,
             "tool_call_id": tool_call_id,
+            "reasoning_content": reasoning_content,
             "timestamp": _now(),
         }
         if metadata:
@@ -145,14 +147,17 @@ class SessionService:
         self, session_id: str, limit: int = 100, agent_name: Optional[str] = None
     ) -> List[Dict]:
         """
-        Build a chat history list suitable for LLM context, filtering out
-        tool messages and empty assistant messages with only tool calls.
-        
+        Build a chat history list suitable for LLM context.
+
+        For DeepSeek thinking mode, messages with reasoning_content
+        (including those with tool_calls but no content) are preserved,
+        and reasoning_content is included in the output.
+
         Args:
             session_id: The session ID
             limit: Maximum number of messages to retrieve
             agent_name: Optional agent name for sub-sessions
-            
+
         Returns:
             Filtered list of messages in OpenAI chat format
         """
@@ -160,15 +165,16 @@ class SessionService:
         history = []
         for msg in messages:
             role = msg["role"]
-            if role == "tool":
+            has_reasoning = bool(msg.get("reasoning_content"))
+            if role == "assistant" and msg.get("tool_calls") and not (msg.get("content") or has_reasoning):
                 continue
-            if role == "assistant" and msg.get("tool_calls") and not msg.get("content"):
-                continue
-            entry = {"role": role, "content": msg["content"]}
+            entry: dict = {"role": role, "content": msg["content"]}
             if msg.get("tool_calls"):
                 entry["tool_calls"] = msg["tool_calls"]
             if msg.get("tool_call_id"):
                 entry["tool_call_id"] = msg["tool_call_id"]
+            if has_reasoning:
+                entry["reasoning_content"] = msg["reasoning_content"]
             history.append(entry)
         return history
 

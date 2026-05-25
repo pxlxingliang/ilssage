@@ -39,6 +39,7 @@ async def stream_chat(
     provider = llm.get_provider(model_id or None)
 
     text_accum: list[str] = []
+    reasoning_accum: list[str] = []
     tool_calls: list[dict] = []
     done_usage: dict = {}
     done_received = False
@@ -51,6 +52,9 @@ async def stream_chat(
 
             if event.type == AgentEventType.CONTENT_CHUNK:
                 text_accum.append(event.data.get("text", ""))
+
+            elif event.type == AgentEventType.REASONING_CHUNK:
+                reasoning_accum.append(event.data.get("text", ""))
 
             elif event.type == AgentEventType.TOOL_CALL_START:
                 tool_calls.append({
@@ -84,7 +88,8 @@ async def stream_chat(
         if not persisted and not done_received and text_accum:
             full_text = "".join(text_accum)
             full_text += "\n\n*(Output truncated by user)*"
-            sess.add_message(session_id, "assistant", full_text)
+            sess.add_message(session_id, "assistant", full_text,
+                             reasoning_content="".join(reasoning_accum) or None)
             persisted = True
         if agent:
             agent.cancel()
@@ -112,6 +117,7 @@ async def stream_chat(
             session_id, "assistant", full_text,
             tool_calls=saved_calls,
             metadata=metadata if metadata else None,
+            reasoning_content="".join(reasoning_accum) or None,
         )
         persisted = True
         for tc in tool_calls:
