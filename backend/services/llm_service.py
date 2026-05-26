@@ -28,7 +28,7 @@ class LLMService:
         if not model_id or "/" not in model_id:
             raise RuntimeError(
                 "No model configured. Please set currentModel in "
-                "~/.ils4gas/config.json or provide a valid model_id."
+                "~/.ilssage/config.json or provide a valid model_id."
             )
         if model_id in self._providers:
             return self._providers[model_id]

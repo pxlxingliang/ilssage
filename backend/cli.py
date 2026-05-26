@@ -6,7 +6,7 @@ from backend.core.env import EnvManager
 def main():
     EnvManager.init()
 
-    parser = argparse.ArgumentParser(prog="ils4gas")
+    parser = argparse.ArgumentParser(prog="ilssage")
     parser.add_argument("--version", action="store_true", help="Print version")
     parser.add_argument("--session", "-s", type=str, default=None, help="Load a specific session on startup (TUI mode)")
     parser.add_argument(
@@ -36,7 +36,7 @@ def main():
 
     if args.version:
         from importlib.metadata import version
-        print(f"ILS4GAS v{version('ils4gas')}")
+        print(f"IlsSage v{version('ilssage')}")
         return
 
     if args.mode == "mcp":

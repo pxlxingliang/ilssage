@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 
-_DEFAULT_CONFIG_PATH = "~/.ils4gas/config.json"
+_DEFAULT_CONFIG_PATH = "~/.ilssage/config.json"
 
 
 def load_config(path: Optional[str] = None) -> Dict[str, Any]:

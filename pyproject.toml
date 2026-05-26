@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ils4gas"
+name = "ilssage"
 version = "0.1.0"
-description = "ILS4GAS - AI Agent for Ionic Liquid Solubility of GAS"
+description = "IlsSage - AI Agent for Ionic Liquid"
 requires-python = ">=3.10"
 dependencies = [
     "ase",
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ils4gas = "backend.cli:main"
+ilssage = "backend.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["backend*"]

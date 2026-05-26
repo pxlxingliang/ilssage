@@ -2,7 +2,7 @@ from textual.app import App
 from backend.tui.screen import ChatScreen
 
 
-class ILS4GASApp(App):
+class IlsSageApp(App):
     def __init__(self, session_id=None, **kwargs):
         super().__init__(**kwargs)
         self._session_arg = session_id

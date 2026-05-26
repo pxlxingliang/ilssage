@@ -1,4 +1,4 @@
-# ILS4GAS
+# IlsSage
 
 **AI Agent for Ionic Liquid Solubility of GAS** — a specialized framework for material science computations, with multiple user interfaces (Web UI / TUI / MCP server) for flexible access.
 
@@ -16,12 +16,12 @@
 
 ```bash
 # 1. Create conda environment
-conda create -n ils4gas python=3.11 nodejs=20 numpy scipy rdkit openbabel tiktoken -y
-conda activate ils4gas
+conda create -n ilssage python=3.11 nodejs=20 numpy scipy rdkit openbabel tiktoken -y
+conda activate ilssage
 
 # 2. Clone the repository
-git clone https://github.com/pxlxingliang/ils4gas.git
-cd ils4gas
+git clone https://github.com/pxlxingliang/ilssage.git
+cd ilssage
 
 # 3. Build frontend (static assets are packaged into the wheel)
 cd frontend && npm install && npm run build && cd ..
@@ -32,27 +32,27 @@ pip install .
 
 ## Configuration
 
-### Environment Variables (~/.ils4gas/env.json)
+### Environment Variables (~/.ilssage/env.json)
 
 Created automatically on first run with default values. Edit as needed:
 
 ```json
 {
-  "ILS4GAS_TRAIN_EB_PATH": "/path/to/properties.pkl",
-  "ILS4GAS_QM_FEATURE_PATH": "/path/to/dft_features.pkl",
-  "ILS4GAS_MOLECULE_GEN_SCRIPT": "/path/to/generation_script.sh",
-  "ILS4GAS_EB_PREDICT_SCRIPT": "/path/to/Eb_predict.py"
+  "ILSSAGE_TRAIN_EB_PATH": "/path/to/properties.pkl",
+  "ILSSAGE_QM_FEATURE_PATH": "/path/to/dft_features.pkl",
+  "ILSSAGE_MOLECULE_GEN_SCRIPT": "/path/to/generation_script.sh",
+  "ILSSAGE_EB_PREDICT_SCRIPT": "/path/to/Eb_predict.py"
 }
 ```
 
 See [Environment Variables](#environment-variables) for the complete list.
 
-### LLM Provider (~/.ils4gas/config.json)
+### LLM Provider (~/.ilssage/config.json)
 
 ```bash
-mkdir -p ~/.ils4gas
-cp config.example.json ~/.ils4gas/config.json
-# Edit ~/.ils4gas/config.json to add your API keys
+mkdir -p ~/.ilssage
+cp config.example.json ~/.ilssage/config.json
+# Edit ~/.ilssage/config.json to add your API keys
 ```
 
 Config example:
@@ -88,18 +88,18 @@ Config example:
 
 ## Usage
 
-Once installed, the `ils4gas` command is available from any directory:
+Once installed, the `ilssage` command is available from any directory:
 
 ### TUI Mode (default)
 
 ```bash
-ils4gas
+ilssage
 ```
 
 ### Web UI Mode
 
 ```bash
-ils4gas web
+ilssage web
 ```
 
 **Local access:** Open **http://localhost:8789** in your browser.
@@ -129,9 +129,9 @@ If the server is running on a remote machine, use SSH local port forwarding to a
 Expose tools for other agents (Claude Code, etc.):
 
 ```bash
-ils4gas mcp --transport stdio                        # stdio (for Claude Code)
-ils4gas mcp --transport sse --port 50001             # SSE (network clients)
-ils4gas mcp --transport streamable-http --port 50001 # HTTP streaming
+ilssage mcp --transport stdio                        # stdio (for Claude Code)
+ilssage mcp --transport sse --port 50001             # SSE (network clients)
+ilssage mcp --transport streamable-http --port 50001 # HTTP streaming
 ```
 
 ## Skills — Adding Your Own Custom Instructions
@@ -143,10 +143,10 @@ Skills let you teach the agent specialized domain knowledge. Each skill is a sim
 Create a skill directory with a `SKILL.md` file:
 
 ```bash
-mkdir -p ~/.ils4gas/skills/my_skill
+mkdir -p ~/.ilssage/skills/my_skill
 ```
 
-Write `~/.ils4gas/skills/my_skill/SKILL.md`:
+Write `~/.ilssage/skills/my_skill/SKILL.md`:
 
 ```markdown
 ---
@@ -177,7 +177,7 @@ That's it — the agent will discover the skill on next startup. You don't need 
 
 ### How It Works
 
-1. **Discovery** — On startup, the agent scans `~/.ils4gas/skills/` for directories containing `SKILL.md`. Only the YAML front matter (name, description) is loaded — the full content stays on disk.
+1. **Discovery** — On startup, the agent scans `~/.ilssage/skills/` for directories containing `SKILL.md`. Only the YAML front matter (name, description) is loaded — the full content stays on disk.
 
 2. **On-Demand Loading** — When you ask a question, the agent decides if a skill is relevant. If so, it calls the `load_skill` tool, which loads the full `SKILL.md` content and injects it into the conversation. The skill's directory path is also returned, so the agent can read additional files from the skill directory if needed.
 
@@ -188,7 +188,7 @@ That's it — the agent will discover the skill on next startup. You don't need 
 For complex skills, avoid putting everything into one huge `SKILL.md`. Instead, keep `SKILL.md` concise and reference additional files that the agent can read on-demand:
 
 ```
-~/.ils4gas/skills/deep_skill/
+~/.ilssage/skills/deep_skill/
 ├── SKILL.md            # Core instructions + index of additional files
 ├── advanced.md         # Advanced usage scenarios
 ├── examples.md         # Worked examples
@@ -216,21 +216,21 @@ The agent receives the skill directory path when it loads the skill, so it can u
 
 ## Environment Variables
 
-All environment variables are managed via `~/.ils4gas/env.json`:
+All environment variables are managed via `~/.ilssage/env.json`:
 
 | Variable | Purpose | Default | Required For |
 |----------|---------|---------|--------------|
-| `ILS4GAS_WEB_HOST` | Web server host | `0.0.0.0` | Web UI |
-| `ILS4GAS_WEB_PORT` | Web server port | `8789` | Web UI |
-| `ILS4GAS_MCP_TRANSPORT` | MCP server transport | `stdio` | MCP server |
-| `ILS4GAS_MCP_HOST` | MCP server host | `localhost` | MCP server |
-| `ILS4GAS_MCP_PORT` | MCP server port | `50001` | MCP server |
-| `ILS4GAS_TRAIN_EB_PATH` | Properties dataset path | — | Property search |
-| `ILS4GAS_QM_FEATURE_PATH` | DFT features dataset path | — | DFT feature search |
-| `ILS4GAS_MOLECULE_GEN_SCRIPT` | Ion generation script path | — | Novel ion generation |
-| `ILS4GAS_EB_PREDICT_SCRIPT` | Binding energy prediction script | See note | Binding energy prediction |
+| `ILSSAGE_WEB_HOST` | Web server host | `0.0.0.0` | Web UI |
+| `ILSSAGE_WEB_PORT` | Web server port | `8789` | Web UI |
+| `ILSSAGE_MCP_TRANSPORT` | MCP server transport | `stdio` | MCP server |
+| `ILSSAGE_MCP_HOST` | MCP server host | `localhost` | MCP server |
+| `ILSSAGE_MCP_PORT` | MCP server port | `50001` | MCP server |
+| `ILSSAGE_TRAIN_EB_PATH` | Properties dataset path | — | Property search |
+| `ILSSAGE_QM_FEATURE_PATH` | DFT features dataset path | — | DFT feature search |
+| `ILSSAGE_MOLECULE_GEN_SCRIPT` | Ion generation script path | — | Novel ion generation |
+| `ILSSAGE_EB_PREDICT_SCRIPT` | Binding energy prediction script | See note | Binding energy prediction |
 
-**Note:** `ILS4GAS_EB_PREDICT_SCRIPT` defaults to `/personal/test/dwl/ils4gas-models/Model/Property_pred/Eb_predict.py`
+**Note:** `ILSSAGE_EB_PREDICT_SCRIPT` defaults to `/personal/test/dwl/ilssage-models/Model/Property_pred/Eb_predict.py`
 
 ## For Developers
 

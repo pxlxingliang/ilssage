@@ -1,5 +1,5 @@
 {
-  "app": { "title": "ILS4GAS" },
+  "app": { "title": "IlsSage" },
   "sidebar": {
     "newChat": "新建对话",
     "noSessions": "暂无会话",
@@ -26,7 +26,7 @@
     "error": "获取模型列表失败"
   },
   "error": {
-    "auth": "API Key 鉴权失败，请检查 ~/.ils4gas/config.json 中的 apiKey 配置",
+    "auth": "API Key 鉴权失败，请检查 ~/.ilssage/config.json 中的 apiKey 配置",
     "network": "网络连接失败，请确认服务已启动",
     "unknown": "发生未知错误"
   },

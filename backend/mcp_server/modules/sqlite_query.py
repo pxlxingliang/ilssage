@@ -144,7 +144,7 @@ def sqlite_query(
     if err:
         return {"success": False, "error": err}
 
-    max_rows_str = os.environ.get("ILS4GAS_SQLITE_MAX_ROWS", "10")
+    max_rows_str = os.environ.get("ILSSAGE_SQLITE_MAX_ROWS", "10")
     try:
         max_rows = int(max_rows_str)
         if max_rows < 1:

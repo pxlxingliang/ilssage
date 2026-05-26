@@ -5,15 +5,15 @@ from typing import Dict
 
 
 _DEFAULTS: Dict[str, str] = {
-    "ILS4GAS_WEB_HOST": "0.0.0.0",
-    "ILS4GAS_WEB_PORT": "8789",
-    "ILS4GAS_MCP_TRANSPORT": "stdio",
-    "ILS4GAS_MCP_HOST": "localhost",
-    "ILS4GAS_MCP_PORT": "50001",
-    "ILS4GAS_TRAIN_EB_PATH": "",
-    "ILS4GAS_QM_FEATURE_PATH": "",
-    "ILS4GAS_MOLECULE_GEN_SCRIPT": "",
-    "ILS4GAS_EB_PREDICT_SCRIPT": "/personal/test/dwl/ils4gas-models/Model/Property_pred/Eb_predict.py",
+    "ILSSAGE_WEB_HOST": "0.0.0.0",
+    "ILSSAGE_WEB_PORT": "8789",
+    "ILSSAGE_MCP_TRANSPORT": "stdio",
+    "ILSSAGE_MCP_HOST": "localhost",
+    "ILSSAGE_MCP_PORT": "50001",
+    "ILSSAGE_TRAIN_EB_PATH": "",
+    "ILSSAGE_QM_FEATURE_PATH": "",
+    "ILSSAGE_MOLECULE_GEN_SCRIPT": "",
+    "ILSSAGE_EB_PREDICT_SCRIPT": "/personal/test/dwl/ilssage-models/Model/Property_pred/Eb_predict.py",
 }
 
 
@@ -25,7 +25,7 @@ class EnvManager:
         if cls._initialized:
             return
 
-        env_file = Path("~/.ils4gas/env.json").expanduser()
+        env_file = Path("~/.ilssage/env.json").expanduser()
         existing: Dict[str, str] = {}
         if env_file.exists():
             try:

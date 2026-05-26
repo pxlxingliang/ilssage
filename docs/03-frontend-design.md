@@ -1,6 +1,6 @@
 # 前端界面设计
 
-本文档详细描述 ILS4GAS 智能体框架的前端界面设计内容，对应主文档的第 6 部分。
+本文档详细描述 IlsSage 智能体框架的前端界面设计内容，对应主文档的第 6 部分。
 
 ## 6. 前端界面设计
 
@@ -219,7 +219,7 @@ frontend/src/
 **文案字典（locales/zh-CN.json）：**
 ```json
 {
-  "app": { "title": "ILS4GAS 智能体", "version": "v2.0" },
+  "app": { "title": "IlsSage 智能体", "version": "v2.0" },
   "sidebar": {
     "newChat": "新建对话",
     "searchPlaceholder": "搜索会话...",
@@ -274,7 +274,7 @@ frontend/src/
 **文案字典（locales/en-US.json）：**
 ```json
 {
-  "app": { "title": "ILS4GAS", "version": "v2.0" },
+  "app": { "title": "IlsSage", "version": "v2.0" },
   "sidebar": {
     "newChat": "New Chat",
     "searchPlaceholder": "Search sessions...",
@@ -363,7 +363,7 @@ interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue>(null!);
 
-const STORAGE_KEY = 'ils4gas_locale';
+const STORAGE_KEY = 'ilssage_locale';
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {

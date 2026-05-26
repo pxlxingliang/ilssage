@@ -11,7 +11,7 @@ Web search tool for retrieving real-time information from the internet.
 
 - Provides up-to-date information for current events and recent data
 - Returns search result information formatted as search result blocks
-- Use this tool for accessing information beyond ILS4GAS's knowledge cutoff
+- Use this tool for accessing information beyond IlsSage's knowledge cutoff
 - Searches are performed automatically within a single API call
 
 Usage notes:
@@ -69,7 +69,7 @@ def _execute(query: str, numResults: int = DEFAULT_RESULTS) -> str:
     req = urllib.request.Request(
         ddg_url,
         headers={
-            "User-Agent": "Mozilla/5.0 (compatible; ILS4GAS/1.0)",
+            "User-Agent": "Mozilla/5.0 (compatible; IlsSage/1.0)",
         },
     )
 

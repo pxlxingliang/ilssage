@@ -8,7 +8,7 @@
 
 **工作区文件结构（用户目录）：**
 ```
-~/.ils4gas/workspace/
+~/.ilssage/workspace/
 ├── AGENT.md        # Agent 全局行为配置（工具使用策略、回复风格、安全规则）
 ├── PERSONA.md      # Agent 人设定义（角色、语气、专业领域）
 ├── MEMORY.md       # 长期记忆文件（用户偏好、历史决策、关键信息）

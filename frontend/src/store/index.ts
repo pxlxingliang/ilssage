@@ -11,7 +11,7 @@ let globalState: {
   currentSessionId: "",
   models: [],
   currentModelId: "",
-  theme: (localStorage.getItem("ils4gas_theme") as "light" | "dark") || "light",
+  theme: (localStorage.getItem("ilssage_theme") as "light" | "dark") || "light",
 };
 
 const listeners = new Set<() => void>();
@@ -52,7 +52,7 @@ export function useStore() {
     }, []),
     toggleTheme: useCallback(() => {
       globalState.theme = globalState.theme === "light" ? "dark" : "light";
-      localStorage.setItem("ils4gas_theme", globalState.theme);
+      localStorage.setItem("ilssage_theme", globalState.theme);
       document.documentElement.setAttribute("data-theme", globalState.theme);
       notify();
     }, []),
@@ -61,6 +61,6 @@ export function useStore() {
 
 export function initTheme() {
   const theme =
-    (localStorage.getItem("ils4gas_theme") as "light" | "dark") || "light";
+    (localStorage.getItem("ilssage_theme") as "light" | "dark") || "light";
   document.documentElement.setAttribute("data-theme", theme);
 }

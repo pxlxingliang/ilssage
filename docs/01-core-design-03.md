@@ -4,7 +4,7 @@
 
 ### 4.3 会话管理设计（SQLite持久化）
 
-**会话表结构（~/.ils4gas/data/sessions.db）：**
+**会话表结构（~/.ilssage/data/sessions.db）：**
 
 ```sql
 -- 会话表

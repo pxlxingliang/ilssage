@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict, Optional
 
-WORKSPACE_DIR = Path("~/.ils4gas/workspace").expanduser()
+WORKSPACE_DIR = Path("~/.ilssage/workspace").expanduser()
 
 _DEFAULT_FILES: Dict[str, str] = {
     "AGENT.md": (
@@ -16,8 +16,8 @@ _DEFAULT_FILES: Dict[str, str] = {
     ),
     "PERSONA.md": (
         "# Persona\n\n"
-        "You are ILS4GAS, a professional AI assistant specialized in "
-        "material science and computational chemistry.\n"
+        "You are IlsSage, a professional AI assistant specialized in "
+        "material science and computational chemistry related to Ionic Liquids.\n"
     ),
     "MEMORY.md": (
         "# Memory\n\n"

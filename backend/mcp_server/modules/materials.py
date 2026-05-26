@@ -26,13 +26,13 @@ def generate_novel_ions(
         Path to the sorted CSV file (columns: smiles, sa_score, similarity).
 
     Requires:
-        ILS4GAS_MOLECULE_GEN_SCRIPT set to the pipeline script path.
+        ILSSAGE_MOLECULE_GEN_SCRIPT set to the pipeline script path.
         The script must accept: --ion, --start, --num, --temp, --output.
     """
-    script_path = os.environ.get("ILS4GAS_MOLECULE_GEN_SCRIPT", "")
+    script_path = os.environ.get("ILSSAGE_MOLECULE_GEN_SCRIPT", "")
     if not script_path:
         raise ValueError(
-            "ILS4GAS_MOLECULE_GEN_SCRIPT is not set. "
+            "ILSSAGE_MOLECULE_GEN_SCRIPT is not set. "
             "Set it to the path of the generation pipeline script."
         )
 
@@ -100,12 +100,12 @@ def predict_binding_energy(
         Dict with "binding_energy" key containing the predicted value.
 
     Requires:
-        ILS4GAS_EB_PREDICT_SCRIPT set to the Eb_predict.py script path.
+        ILSSAGE_EB_PREDICT_SCRIPT set to the Eb_predict.py script path.
     """
-    script_path = os.environ.get("ILS4GAS_EB_PREDICT_SCRIPT", "")
+    script_path = os.environ.get("ILSSAGE_EB_PREDICT_SCRIPT", "")
     if not script_path:
         raise ValueError(
-            "ILS4GAS_EB_PREDICT_SCRIPT is not set. "
+            "ILSSAGE_EB_PREDICT_SCRIPT is not set. "
             "Set it to the path of the Eb_predict.py script."
         )
 

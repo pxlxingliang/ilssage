@@ -11,7 +11,7 @@ Skills 是框架的核心扩展机制，每个 Skill 是一个包含元信息和
 **Skill 目录结构：**
 
 ```
-~/.ils4gas/skills/
+~/.ilssage/skills/
 ├── code_review/
 │   └── SKILL.md          # Skill 元信息(YAML front matter) + 指令文档(markdown body)
 ├── code_helper/
@@ -66,7 +66,7 @@ Agent 启动
               └─> SkillRegistry.load(name)     # 解析 SKILL.md
               └─> 返回格式化内容:
                     ## Skill: code_review
-                    Directory: /root/.ils4gas/skills/code_review
+                    Directory: /root/.ilssage/skills/code_review
 
                     [SKILL.md 全文]
 

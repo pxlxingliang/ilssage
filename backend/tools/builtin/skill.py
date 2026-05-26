@@ -7,7 +7,7 @@ from loguru import logger
 from backend.tools.registry import ToolInfo
 
 BUILTIN_SKILLS_DIR = Path(__file__).parent / "skills"
-SKILLS_DIR = Path("~/.ils4gas/skills").expanduser()
+SKILLS_DIR = Path("~/.ilssage/skills").expanduser()
 
 DESCRIPTION = """\
 Load a skill module's full instructions and domain knowledge. \

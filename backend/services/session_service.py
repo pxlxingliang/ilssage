@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import uuid4
 
-DATA_ROOT = Path("~/.ils4gas/data").expanduser()
+DATA_ROOT = Path("~/.ilssage/data").expanduser()
 SESSIONS_INDEX = DATA_ROOT / "sessions.json"
 SESSIONS_DIR = DATA_ROOT / "sessions"
 

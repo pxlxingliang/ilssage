@@ -23,7 +23,7 @@ OpenAICompatibleProvider(LLMProvider)
   └── ainvoke / astream_invoke        // 通过 AsyncOpenAI client 调用
 ```
 
-**~/.ils4gas/config.json 结构：** (详见 `backend/core/config.py` 的 `load_config()`)
+**~/.ilssage/config.json 结构：** (详见 `backend/core/config.py` 的 `load_config()`)
 
 ```
 {

@@ -1,4 +1,4 @@
-# ILS4GAS 智能体框架 - 技术设计文档
+# IlsSage 智能体框架 - 技术设计文档
 
 ## 1. 项目概述
 
@@ -35,9 +35,9 @@
 ```
 项目目录 (源代码)                用户目录 (运行时数据)
 /your/project/                  ~/
-├── backend/         安装到      ├── .ils4gas/
+├── backend/         安装到      ├── .ilssage/
 ├── frontend/        site-       │   └── config.json        # 合并：模型+MCP+服务器配置
-├── docs/            packages    └── .ils4gas/
+├── docs/            packages    └── .ilssage/
 ├── tests/                           ├── data/
 ├── pyproject.toml                   │   ├── sessions.db     # 会话+消息
 └── README.md                        │   ├── memory.db      # 长期记忆
@@ -52,8 +52,8 @@
 
 **规则：**
 - 项目目录仅含**源代码、构建配置、文档、测试**，不提交任何运行时配置或用户数据
-- 首次启动时自动在 `~/.ils4gas/` 生成默认配置文件
-- 首次启动时自动在 `~/.ils4gas/` 创建完整数据目录树
+- 首次启动时自动在 `~/.ilssage/` 生成默认配置文件
+- 首次启动时自动在 `~/.ilssage/` 创建完整数据目录树
 - `config.json` 的 API Key 仅存在于用户目录，永不进入版本控制
 
 ---
@@ -86,7 +86,7 @@
                ▼                                  ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                          统一入口层 (CLI)                                   │
-│              ils4gas --web  /  ils4gas (默认 TUI 模式)                     │
+│              ilssage --web  /  ilssage (默认 TUI 模式)                     │
 └───────────────────────────────┬───────────────────────────────────────────┘
                                 │
                                 ▼
@@ -111,8 +111,8 @@
 │                            ▼                                                 │
 │  ┌─────────────────────────────────────────────────────────────────────┐ │
 │  │                    数据存储层（用户目录）                              │ │
-│  │  ~/.ils4gas/data/sessions.db | vectors/ | memory.db                │ │
-│  │  ~/.ils4gas/config.json | skills/ | workspace/                      │ │
+│  │  ~/.ilssage/data/sessions.db | vectors/ | memory.db                │ │
+│  │  ~/.ilssage/config.json | skills/ | workspace/                      │ │
 │  └─────────────────────────────────────────────────────────────────────┘ │
 └───────────────────────────────────────────────────────────────────────────┘
 
@@ -127,7 +127,7 @@
 - **Web 模式**：通过浏览器访问，使用 HTTP REST + WebSocket 与后端通信
 - **TUI 模式**：直接在终端运行，通过函数调用直接使用后端核心
 - **共享核心**：两种模式共用完全相同的业务服务、Agent 框架、工具系统、记忆系统
-- **统一入口**：通过 `ils4gas` 命令的 `--web` 或 `--tui` 参数选择启动方式
+- **统一入口**：通过 `ilssage` 命令的 `--web` 或 `--tui` 参数选择启动方式
 
 ### 2.2 技术栈选型
 
@@ -137,7 +137,7 @@
 | **智能体核心** | 自研（基于hello-agents理念） | 轻量级，完全可控 |
 | **LLM接口** | OpenAI Python SDK + LiteLLM(可选) | 兼容所有OpenAI接口，可扩展100+提供商 |
 | **MCP集成** | mcp (官方Python SDK) | 支持 stdio/SSE/HTTP 三种传输协议，支持工具懒加载 |
-| **数据存储** | SQLite + ChromaDB (用户目录) | 运行时数据在 `~/.ils4gas/data/`，配置在 `~/.ils4gas/` |
+| **数据存储** | SQLite + ChromaDB (用户目录) | 运行时数据在 `~/.ilssage/data/`，配置在 `~/.ilssage/` |
 | **前端界面** | React/Vue + Vite | 组件化开发，支持虚拟滚动、流式渲染 |
 | **实时通信** | WebSocket (主) + SSE (fallback) | 流式响应，自动降级 |
 | **配置管理** | Pydantic + Pydantic-Settings | 数据验证、环境变量解析、配置热加载 |
@@ -150,7 +150,7 @@
 ## 3. 项目结构
 
 ```
-ils4gas/
+ilssage/
 ├── backend/
 │   ├── core/           # 核心框架层：Agent基类、LLM接口、消息系统、配置管理、上下文工程等
 │   ├── agents/         # Agent实现层：各种Agent行为实现
@@ -172,9 +172,9 @@ ils4gas/
 
 ```
 ~/
-├── .config/ils4gas/
+├── .config/ilssage/
 │   └── config.json            # 合并：模型+MCP+服务器配置
-└── .ils4gas/
+└── .ilssage/
     ├── data/
     │   ├── sessions.db        # 会话+消息 SQLite
     │   ├── memory.db         # 长期记忆 SQLite

@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     current = llm.get_current_model()
     mcp_entries = llm.config.get("mcp_servers", [])
     external_tools = len(mcp.list_all_tools()) if mcp else 0
-    port = os.environ.get("ILS4GAS_WEB_PORT", "8789")
+    port = os.environ.get("ILSSAGE_WEB_PORT", "8789")
     print(f"  tools: {len(llm.tool_registry)} built-in tools loaded")
     print(f"  model: {current['id']}")
     print(f"  mcp  : {len(mcp_entries)} external servers, {external_tools} external tools")
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     await disconnect_services()
 
 
-app = FastAPI(title="ILS4GAS", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="IlsSage", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -79,12 +79,12 @@ def run_web(port: int = None, host: str = None):
     import uvicorn
     from backend.core.port import find_free_port
 
-    p = port or int(os.getenv("ILS4GAS_WEB_PORT", "8789"))
-    h = host or os.getenv("ILS4GAS_WEB_HOST", "0.0.0.0")
+    p = port or int(os.getenv("ILSSAGE_WEB_PORT", "8789"))
+    h = host or os.getenv("ILSSAGE_WEB_HOST", "0.0.0.0")
     actual = find_free_port(p, h)
     if actual != p:
         print(f"  port {p} in use, using {actual}")
-    os.environ["ILS4GAS_WEB_PORT"] = str(actual)
+    os.environ["ILSSAGE_WEB_PORT"] = str(actual)
     uvicorn.run("backend.api.main:app", host=h, port=actual, reload=False)
 
 

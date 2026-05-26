@@ -6,7 +6,7 @@
 
 MCP (Model Context Protocol) 是本框架的核心工具集成协议。支持三种传输方式，多服务器管理，以及工具懒加载。
 
-**MCP服务器配置结构：** (详见 `~/.ils4gas/config.json` 的 `mcp_servers` 字段，解析逻辑见 `backend/tools/mcp_adapter.py` 的 `MCPServerConfig`)
+**MCP服务器配置结构：** (详见 `~/.ilssage/config.json` 的 `mcp_servers` 字段，解析逻辑见 `backend/tools/mcp_adapter.py` 的 `MCPServerConfig`)
 
 ```
 mcp_servers: [

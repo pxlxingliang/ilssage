@@ -16,7 +16,7 @@ interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue>(null!);
 
-const STORAGE_KEY = "ils4gas_locale";
+const STORAGE_KEY = "ilssage_locale";
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<Locale>(() => {
