@@ -494,6 +494,48 @@ function SegmentView({
 }
 
 
+function resolveImageUrl(src: string): string {
+  if (src.startsWith("/api/v1/files")) return src;
+  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:")) return src;
+  if (src.startsWith("/")) return `/api/v1/files?path=${encodeURIComponent(src)}`;
+  return src;
+}
+
+function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
+  const resolvedSrc = src ? resolveImageUrl(src) : src;
+  const [broken, setBroken] = useState(false);
+  if (broken) {
+    return (
+      <div
+        className="markdown-img-fallback"
+        style={{
+          padding: "10px 14px",
+          background: "var(--bg-tertiary)",
+          borderRadius: "8px",
+          border: "1px solid var(--border-color)",
+          color: "var(--text-muted)",
+          fontSize: "13px",
+          margin: "8px 0",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
+        <span>🖼</span>
+        <span>Image unavailable. Please verify the file path is valid: <code>{src}</code></span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={resolvedSrc}
+      alt={alt || ""}
+      loading="lazy"
+      onClick={() => resolvedSrc && window.open(resolvedSrc, "_blank")}
+    />
+  );
+}
+
 function TextBubble({
   content,
   showCursor,
@@ -541,6 +583,9 @@ function TextBubble({
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
+          components={{
+            img: MarkdownImage,
+          }}
         >
           {content}
         </ReactMarkdown>

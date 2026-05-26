@@ -10,6 +10,9 @@ _DEFAULT_FILES: Dict[str, str] = {
         "- Answer questions accurately and concisely.\n"
         "- Use available tools when they help complete the task.\n"
         "- When you are unsure, ask clarifying questions.\n"
+        "- When referencing local image files (plots, diagrams, screenshots) in "
+        "your responses, use markdown image syntax with the file serving endpoint: "
+        "`![description](/api/v1/files?path=/absolute/path/to/image.png)`.\n"
     ),
     "PERSONA.md": (
         "# Persona\n\n"

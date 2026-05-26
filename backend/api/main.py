@@ -48,7 +48,7 @@ app.add_middleware(
 )
 
 # API routes
-from backend.api.routes import chat, llm, session, mcp, skill, memory, ws
+from backend.api.routes import chat, llm, session, mcp, skill, memory, ws, files
 
 app.include_router(chat.router)
 app.include_router(llm.router)
@@ -57,6 +57,7 @@ app.include_router(mcp.router)
 app.include_router(skill.router)
 app.include_router(memory.router)
 app.include_router(ws.router)
+app.include_router(files.router)
 
 # Frontend static files
 static_dir = Path(__file__).parent.parent / "static"

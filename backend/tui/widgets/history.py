@@ -1,7 +1,14 @@
 import json
+import re
 from rich.text import Text
 from textual.widgets import Static, Collapsible
 from textual.containers import VerticalScroll
+
+_IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
+
+
+def _convert_images(content: str) -> str:
+    return _IMG_RE.sub(r"[bold cyan]📷 \2[/]", content)
 
 
 class MessageHistory(VerticalScroll):
@@ -10,26 +17,28 @@ class MessageHistory(VerticalScroll):
         self._msgs: list[dict] = []
 
     def add_message(self, role: str, content: str):
+        display = _convert_images(content)
         self._msgs.append({"type": "message", "role": role, "content": content})
         prefix = self._prefix_for(role)
-        self.mount(Static(Text.from_markup(prefix + content)))
+        self.mount(Static(Text.from_markup(prefix + display)))
         self.scroll_end(animate=False)
 
     def update_last(self, content: str):
+        display = _convert_images(content)
         if self._msgs and self._msgs[-1]["type"] == "message" and self._msgs[-1]["role"] == "assistant":
             self._msgs[-1]["content"] = content
             for child in reversed(self.children):
                 if isinstance(child, Static) and not isinstance(child, Collapsible):
                     prefix = self._prefix_for("assistant")
-                    child.update(Text.from_markup(prefix + content))
+                    child.update(Text.from_markup(prefix + display))
                     self.scroll_end(animate=False)
                     return
             prefix = self._prefix_for("assistant")
-            self.mount(Static(Text.from_markup(prefix + content)))
+            self.mount(Static(Text.from_markup(prefix + display)))
         else:
             self._msgs.append({"type": "message", "role": "assistant", "content": content})
             prefix = self._prefix_for("assistant")
-            self.mount(Static(Text.from_markup(prefix + content)))
+            self.mount(Static(Text.from_markup(prefix + display)))
         self.scroll_end(animate=False)
 
     def add_tool_call(self, tool_name: str, args: str, result: str = ""):
@@ -95,10 +104,11 @@ class MessageHistory(VerticalScroll):
             if formatted:
                 lines.append(f"[bold]Arguments:[/]\n{formatted}")
         if result:
+            display = _convert_images(result)
             if result.startswith("Error"):
-                lines.append(f"[bold red]Result:[/] {result[:2000]}")
+                lines.append(f"[bold red]Result:[/] {display[:2000]}")
             else:
-                lines.append(f"[bold]Result:[/] {result[:2000]}")
+                lines.append(f"[bold]Result:[/] {display[:2000]}")
 
         content_text = "\n\n".join(lines) if lines else ""
         content = Static(Text.from_markup(content_text))

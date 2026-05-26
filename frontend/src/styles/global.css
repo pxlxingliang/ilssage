@@ -131,3 +131,12 @@ input, textarea {
   border: none;
   border-top: 1px solid var(--border-color);
 }
+
+.markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  display: block;
+  cursor: pointer;
+}
