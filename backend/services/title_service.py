@@ -10,7 +10,7 @@ TITLE_PROMPT = (
 
 async def generate_title(content: str, llm_service) -> Optional[str]:
     if not content or not llm_service:
-        return None
+        return _fallback_title(content)
 
     trimmed = content.strip()
     if len(trimmed) > 200:
@@ -24,8 +24,18 @@ async def generate_title(content: str, llm_service) -> Optional[str]:
     try:
         result = await llm_service.ainvoke(messages, temperature=0.3, max_tokens=20)
         title = result.strip().strip('"').strip("'")
-        if not title or len(title) > 80:
-            return None
-        return title
+        if title and len(title) <= 80:
+            return title
     except Exception:
+        pass
+
+    return _fallback_title(content)
+
+
+def _fallback_title(content: Optional[str]) -> Optional[str]:
+    if not content:
         return None
+    title = content.strip().replace("\n", " ").replace("\r", "")
+    if len(title) > 10:
+        title = title[:10].rstrip() + "…"
+    return title or None

@@ -35,6 +35,9 @@ async def stream_chat(
     messages.append({"role": "user", "content": user_content})
     sess.add_message(session_id, "user", user_content)
 
+    # Fire title generation early, in parallel with agent execution
+    asyncio.create_task(generate_chat_title(session_id, user_content))
+
     agent = _create_agent()
     provider = llm.get_provider(model_id or None)
 
@@ -127,8 +130,6 @@ async def stream_chat(
                     tool_call_id=tc["id"],
                 )
 
-    asyncio.create_task(_auto_title(session_id, user_content))
-
 
 async def run_chat(
     session_id: str,
@@ -151,11 +152,12 @@ async def run_chat(
     messages.append({"role": "user", "content": user_content})
     sess.add_message(session_id, "user", user_content)
 
+    asyncio.create_task(generate_chat_title(session_id, user_content))
+
     agent = _create_agent()
     provider = llm.get_provider(model_id or None)
     response = await agent.run(messages, provider, session_id=session_id)
     sess.add_message(session_id, "assistant", response)
-    asyncio.create_task(generate_chat_title(session_id, user_content))
     return response
 
 
@@ -172,19 +174,14 @@ async def generate_chat_title(session_id: str, user_content: str):
     Auto-generate a title for a session if it's still 'New Chat'.
 
     Safe to call as a fire-and-forget task (eg. asyncio.create_task).
+    Falls back to a truncated user message if LLM generation fails.
     """
     sess = get_session_service()
     llm = get_llm_service()
     session = sess.get_session(session_id)
     if not session or session.get("title") != "New Chat":
         return
-    try:
-        title = await generate_title(user_content, llm)
-        if title:
-            sess.update_session(session_id, title=title)
-    except Exception:
-        pass
+    title = await generate_title(user_content, llm)
+    if title:
+        sess.update_session(session_id, title=title)
 
-
-async def _auto_title(session_id: str, user_content: str):
-    await generate_chat_title(session_id, user_content)
