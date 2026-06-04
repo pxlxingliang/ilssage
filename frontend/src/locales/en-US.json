@@ -10,7 +10,7 @@
     "send": "Send",
     "stop": "Stop",
     "thinking": "Thinking...",
-    "empty": "Start a new conversation",
+    "empty": "ILsSage Agent",
     "truncated": "Output truncated by user",
     "queued": "Waiting for previous task..."
   },

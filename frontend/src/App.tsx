@@ -22,9 +22,6 @@ export function App() {
       .then((r) => r.json())
       .then((d) => {
         setSessions(d.sessions || []);
-        if (!currentSessionId && d.sessions?.length > 0) {
-          setCurrentSessionId(d.sessions[0].id);
-        }
       });
   }, []);
 

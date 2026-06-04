@@ -10,7 +10,7 @@
     "send": "发送",
     "stop": "停止",
     "thinking": "思考中",
-    "empty": "开始一段新对话吧",
+    "empty": "ILsSage Agent",
     "truncated": "输出被用户截断",
     "queued": "等待前面的任务完成..."
   },
