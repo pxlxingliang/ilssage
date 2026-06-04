@@ -36,7 +36,7 @@ def main():
 
     if args.version:
         from importlib.metadata import version
-        print(f"IlsSage v{version('ilssage')}")
+        print(f"ILsSage v{version('ilssage')}")
         return
 
     if args.mode == "mcp":

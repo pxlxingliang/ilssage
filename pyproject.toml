@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ilssage"
 version = "0.1.0"
-description = "IlsSage - AI Agent for Ionic Liquid"
+description = "ILsSage - AI Agent for Ionic Liquid"
 requires-python = ">=3.10"
 dependencies = [
     "ase",

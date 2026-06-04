@@ -21,7 +21,7 @@ def _load_tools():
 
 
 def run_mcp(transport: str = None, port: int = None, host: str = None):
-    print(f"IlsSage v{version('ilssage')}")
+    print(f"ILsSage v{version('ilssage')}")
 
     if transport:
         os.environ["ILSSAGE_MCP_TRANSPORT"] = transport
@@ -47,8 +47,8 @@ def run_mcp(transport: str = None, port: int = None, host: str = None):
         os.environ["ILSSAGE_MCP_PORT"] = str(requested)
 
     if t == "stdio":
-        print("Starting IlsSage MCP server (stdio)...")
+        print("Starting ILsSage MCP server (stdio)...")
     else:
-        print(f"Starting IlsSage MCP server at {h}:{actual} ({t})...")
+        print(f"Starting ILsSage MCP server at {h}:{actual} ({t})...")
 
     mcp.run(transport=t)
