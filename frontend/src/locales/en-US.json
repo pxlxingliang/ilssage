@@ -1,5 +1,5 @@
 {
-  "app": { "title": "ILsSage" },
+  "app": { "title": "ILsSage", "name": "ILsSage Agent" },
   "sidebar": {
     "newChat": "New Chat",
     "noSessions": "No sessions",
@@ -10,7 +10,7 @@
     "send": "Send",
     "stop": "Stop",
     "thinking": "Thinking...",
-    "empty": "ILsSage Agent",
+    "empty": "Start a new conversation",
     "truncated": "Output truncated by user",
     "queued": "Waiting for previous task..."
   },
