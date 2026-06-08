@@ -3,7 +3,10 @@
   "sidebar": {
     "newChat": "新建对话",
     "noSessions": "暂无会话",
-    "delete": "删除"
+    "delete": "删除",
+    "deleteConversation": "删除对话",
+    "generateTitle": "生成对话标题",
+    "setTitle": "设置标题"
   },
   "chat": {
     "placeholder": "输入消息... (Enter 发送, Shift+Enter 换行)",

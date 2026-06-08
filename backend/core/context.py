@@ -40,13 +40,17 @@ class WorkspaceContext:
         WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
         for name, content in _DEFAULT_FILES.items():
             path = WORKSPACE_DIR / name
-            if not path.exists():
+            if name == "AGENT.md":
+                path.write_text(content, encoding="utf-8")
+            elif not path.exists():
                 path.write_text(content, encoding="utf-8")
 
     def load_context(self) -> Dict[str, Optional[str]]:
         ctx: Dict[str, Optional[str]] = {}
         for key, path in self._files.items():
-            if path.exists():
+            if key == "agent":
+                ctx[key] = _DEFAULT_FILES["AGENT.md"]
+            elif path.exists():
                 ctx[key] = path.read_text(encoding="utf-8")
             else:
                 ctx[key] = None

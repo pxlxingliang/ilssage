@@ -167,16 +167,21 @@ def _create_agent():
     )
 
 
-async def generate_chat_title(session_id: str, user_content: str):
+async def generate_chat_title(session_id: str, user_content: str, force: bool = False):
     """
-    Auto-generate a title for a session if it's still 'New Chat'.
+    Auto-generate a title for a session.
+
+    When force=False (default), only generates if title is still 'New Chat'.
+    When force=True, always regenerates regardless of current title.
 
     Safe to call as a fire-and-forget task (eg. asyncio.create_task).
     """
     sess = get_session_service()
     llm = get_llm_service()
     session = sess.get_session(session_id)
-    if not session or session.get("title") != "New Chat":
+    if not session:
+        return
+    if not force and session.get("title") != "New Chat":
         return
     try:
         title = await generate_title(user_content, llm)

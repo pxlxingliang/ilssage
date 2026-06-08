@@ -78,19 +78,19 @@ class LLMService:
         except (KeyError, ValueError):
             return {"id": self.current_model, "name": "Unknown", "provider": "", "limit": {}}
 
-    def invoke(self, messages: List[Dict], **kwargs) -> str:
-        return self.get_provider().invoke(messages, **kwargs)
+    def invoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> str:
+        return self.get_provider().invoke(messages, thinking=thinking, **kwargs)
 
-    def stream_invoke(self, messages: List[Dict], **kwargs) -> Iterator[str]:
-        return self.get_provider().stream_invoke(messages, **kwargs)
+    def stream_invoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> Iterator[str]:
+        return self.get_provider().stream_invoke(messages, thinking=thinking, **kwargs)
 
-    async def ainvoke(self, messages: List[Dict], **kwargs) -> str:
-        return await self.get_provider().ainvoke(messages, **kwargs)
+    async def ainvoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> str:
+        return await self.get_provider().ainvoke(messages, thinking=thinking, **kwargs)
 
     async def astream_invoke(
-        self, messages: List[Dict], **kwargs
+        self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs
     ) -> AsyncIterator[str]:
         async for chunk in self.get_provider().astream_invoke(
-            messages, **kwargs
+            messages, thinking=thinking, **kwargs
         ):
             yield chunk

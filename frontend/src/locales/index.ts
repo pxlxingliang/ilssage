@@ -2,7 +2,7 @@ export type Locale = "zh-CN" | "en-US";
 
 export interface LocaleDict {
   app: { title: string };
-  sidebar: { newChat: string; noSessions: string; delete: string };
+  sidebar: { newChat: string; noSessions: string; delete: string; deleteConversation: string; generateTitle: string; setTitle: string };
   chat: {
     placeholder: string;
     send: string;

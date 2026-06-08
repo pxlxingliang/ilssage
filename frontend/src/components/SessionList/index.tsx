@@ -1,5 +1,12 @@
+import { useEffect, useState, useRef } from "react";
 import { useLocale } from "../../hooks/useLocale";
 import { useStore } from "../../store";
+
+interface ContextMenuState {
+  sessionId: string;
+  x: number;
+  y: number;
+}
 
 export function SessionList() {
   const { t } = useLocale();
@@ -9,6 +16,33 @@ export function SessionList() {
     setCurrentSessionId,
     setSessions,
   } = useStore();
+
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    if (contextMenu) {
+      document.addEventListener("click", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [contextMenu]);
+
+  useEffect(() => {
+    if (editingSessionId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingSessionId]);
 
   const createSession = async () => {
     try {
@@ -22,14 +56,64 @@ export function SessionList() {
     }
   };
 
-  const deleteSession = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const deleteSession = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     await fetch(`/api/v1/sessions/${id}`, { method: "DELETE" });
     const updated = await fetch("/api/v1/sessions").then((r) => r.json());
     setSessions(updated.sessions || []);
     if (currentSessionId === id) {
       setCurrentSessionId(updated.sessions?.[0]?.id || "");
     }
+  };
+
+  const handleContextMenu = (sessionId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ sessionId, x: e.clientX, y: e.clientY });
+  };
+
+  const handleDeleteFromMenu = () => {
+    if (!contextMenu) return;
+    deleteSession(contextMenu.sessionId);
+    setContextMenu(null);
+  };
+
+  const handleGenerateTitle = async () => {
+    if (!contextMenu) return;
+    try {
+      await fetch(`/api/v1/sessions/${contextMenu.sessionId}/generate-title`, {
+        method: "POST",
+      });
+      const updated = await fetch("/api/v1/sessions").then((r) => r.json());
+      setSessions(updated.sessions || []);
+    } catch (e) {
+      console.error(e);
+    }
+    setContextMenu(null);
+  };
+
+  const handleSetTitle = () => {
+    if (!contextMenu) return;
+    const session = sessions.find((s: any) => s.id === contextMenu.sessionId);
+    if (session) {
+      setEditTitle(session.title || "");
+      setEditingSessionId(contextMenu.sessionId);
+    }
+    setContextMenu(null);
+  };
+
+  const handleSaveTitle = async (id: string) => {
+    const trimmed = editTitle.trim();
+    if (trimmed) {
+      await fetch(`/api/v1/sessions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: trimmed }),
+      });
+      const updated = await fetch("/api/v1/sessions").then((r) => r.json());
+      setSessions(updated.sessions || []);
+    }
+    setEditingSessionId(null);
+    setEditTitle("");
   };
 
   return (
@@ -72,6 +156,7 @@ export function SessionList() {
           <div
             key={s.id}
             onClick={() => setCurrentSessionId(s.id)}
+            onContextMenu={(e) => handleContextMenu(s.id, e)}
             style={{
               padding: "10px 12px",
               marginBottom: "2px",
@@ -87,16 +172,43 @@ export function SessionList() {
               alignItems: "center",
             }}
           >
-            <span
-              style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                flex: 1,
-              }}
-            >
-              {s.title}
-            </span>
+            {editingSessionId === s.id ? (
+              <input
+                ref={editInputRef}
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveTitle(s.id);
+                  if (e.key === "Escape") {
+                    setEditingSessionId(null);
+                    setEditTitle("");
+                  }
+                }}
+                onBlur={() => handleSaveTitle(s.id)}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  flex: 1,
+                  padding: "2px 4px",
+                  fontSize: "13px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--accent)",
+                  background: "var(--bg-primary)",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                }}
+              >
+                {s.title}
+              </span>
+            )}
             <button
               onClick={(e) => deleteSession(s.id, e)}
               style={{
@@ -115,6 +227,90 @@ export function SessionList() {
           </div>
         ))}
       </div>
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          style={{
+            position: "fixed",
+            left: contextMenu.x,
+            top: contextMenu.y,
+            zIndex: 1000,
+            background: "var(--bg-primary)",
+            border: "1px solid var(--border-color)",
+            borderRadius: "6px",
+            padding: "4px 0",
+            minWidth: "140px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          }}
+        >
+          <button
+            onClick={handleDeleteFromMenu}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "6px 12px",
+              fontSize: "13px",
+              textAlign: "left",
+              background: "none",
+              border: "none",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "var(--bg-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "none")
+            }
+          >
+            {t.sidebar.deleteConversation}
+          </button>
+          <button
+            onClick={handleGenerateTitle}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "6px 12px",
+              fontSize: "13px",
+              textAlign: "left",
+              background: "none",
+              border: "none",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "var(--bg-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "none")
+            }
+          >
+            {t.sidebar.generateTitle}
+          </button>
+          <button
+            onClick={handleSetTitle}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "6px 12px",
+              fontSize: "13px",
+              textAlign: "left",
+              background: "none",
+              border: "none",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "var(--bg-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "none")
+            }
+          >
+            {t.sidebar.setTitle}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

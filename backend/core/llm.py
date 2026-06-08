@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, List, Dict, Any, Optional, AsyncIterator
+from typing import Iterator, List, Dict, Optional, AsyncIterator
 
 from openai import OpenAI, AsyncOpenAI
-
-THINKING_BASE_URLS = {"https://api.deepseek.com"}
 
 
 class ProviderUsage:
@@ -27,20 +25,20 @@ class ProviderUsage:
 
 class LLMProvider(ABC):
     @abstractmethod
-    def invoke(self, messages: List[Dict], **kwargs) -> str:
+    def invoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> str:
         ...
 
     @abstractmethod
-    def stream_invoke(self, messages: List[Dict], **kwargs) -> Iterator[str]:
+    def stream_invoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> Iterator[str]:
         ...
 
     @abstractmethod
-    async def ainvoke(self, messages: List[Dict], **kwargs) -> str:
+    async def ainvoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> str:
         ...
 
     @abstractmethod
     async def astream_invoke(
-        self, messages: List[Dict], **kwargs
+        self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs
     ) -> AsyncIterator[str]:
         ...
 
@@ -77,21 +75,28 @@ class OpenAICompatibleProvider(LLMProvider):
         self._last_reasoning: Optional[str] = None
 
     @property
-    def is_thinking(self) -> bool:
-        return self._base_url in THINKING_BASE_URLS
+    def model_type(self) -> str:
+        if "deepseek" in self._base_url.lower():
+            return "deepseek"
+        return "default"
 
-    def _build_create_kwargs(self, kwargs: dict) -> dict:
-        if not self.is_thinking:
+    def _build_create_kwargs(self, kwargs: dict, thinking: Optional[bool] = None) -> dict:
+        if self.model_type == "deepseek":
+            if "extra_body" not in kwargs:
+                kwargs["extra_body"] = {}
+            if thinking is None or thinking:
+                kwargs["extra_body"]["thinking"] = {"type": "enabled"}
+                if "reasoning_effort" not in kwargs:
+                    kwargs["reasoning_effort"] = "high"
+            else:
+                kwargs["extra_body"]["thinking"] = {"type": "disabled"}
+                kwargs.pop("reasoning_effort", None)
             return kwargs
-        merged = {"reasoning_effort": "high",
-                  "extra_body": {"thinking": {"type": "enabled"}}}
-        merged.update(kwargs)
-        return merged
-
-    def invoke(self, messages: List[Dict], **kwargs) -> str:
+        return kwargs
+    def invoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> str:
         resp = self.client.chat.completions.create(
             model=self._model_name, messages=messages,
-            **self._build_create_kwargs(kwargs),
+            **self._build_create_kwargs(kwargs, thinking=thinking),
         )
         if resp.usage:
             self._last_usage = ProviderUsage(
@@ -100,17 +105,17 @@ class OpenAICompatibleProvider(LLMProvider):
                 total_tokens=resp.usage.total_tokens,
             )
         msg = resp.choices[0].message
-        if self.is_thinking:
+        if self.model_type == "deepseek":
             self._last_reasoning = getattr(msg, "reasoning_content", None)
         return msg.content or ""
 
-    def stream_invoke(self, messages: List[Dict], **kwargs) -> Iterator[str]:
+    def stream_invoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> Iterator[str]:
         stream_kwargs = {**kwargs}
         if "stream_options" not in stream_kwargs:
             stream_kwargs["stream_options"] = {"include_usage": True}
         stream = self.client.chat.completions.create(
             model=self._model_name, messages=messages, stream=True,
-            **self._build_create_kwargs(stream_kwargs),
+            **self._build_create_kwargs(stream_kwargs, thinking=thinking),
         )
         reasoning_parts: list[str] = []
         for chunk in stream:
@@ -130,10 +135,10 @@ class OpenAICompatibleProvider(LLMProvider):
         if reasoning_parts:
             self._last_reasoning = "".join(reasoning_parts)
 
-    async def ainvoke(self, messages: List[Dict], **kwargs) -> str:
+    async def ainvoke(self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs) -> str:
         resp = await self.async_client.chat.completions.create(
             model=self._model_name, messages=messages,
-            **self._build_create_kwargs(kwargs),
+            **self._build_create_kwargs(kwargs, thinking=thinking),
         )
         if resp.usage:
             self._last_usage = ProviderUsage(
@@ -142,19 +147,19 @@ class OpenAICompatibleProvider(LLMProvider):
                 total_tokens=resp.usage.total_tokens,
             )
         msg = resp.choices[0].message
-        if self.is_thinking:
+        if self.model_type == "deepseek":
             self._last_reasoning = getattr(msg, "reasoning_content", None)
         return msg.content or ""
 
     async def astream_invoke(
-        self, messages: List[Dict], **kwargs
+        self, messages: List[Dict], *, thinking: Optional[bool] = None, **kwargs
     ) -> AsyncIterator[str]:
         stream_kwargs = {**kwargs}
         if "stream_options" not in stream_kwargs:
             stream_kwargs["stream_options"] = {"include_usage": True}
         stream = await self.async_client.chat.completions.create(
             model=self._model_name, messages=messages, stream=True,
-            **self._build_create_kwargs(stream_kwargs),
+            **self._build_create_kwargs(stream_kwargs, thinking=thinking),
         )
         reasoning_parts: list[str] = []
         async for chunk in stream:
