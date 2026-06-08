@@ -1,4 +1,4 @@
-# IlsSage
+# ILsSage
 
 **AI Agent for Ionic Liquid Solubility of GAS** — a specialized framework for material science computations, with multiple user interfaces (Web UI / TUI / MCP server) for flexible access.
 

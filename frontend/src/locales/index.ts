@@ -1,7 +1,7 @@
 export type Locale = "zh-CN" | "en-US";
 
 export interface LocaleDict {
-  app: { title: string };
+  app: { title: string; name: string };
   sidebar: { newChat: string; noSessions: string; delete: string; deleteConversation: string; generateTitle: string; setTitle: string };
   chat: {
     placeholder: string;

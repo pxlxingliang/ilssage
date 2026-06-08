@@ -103,7 +103,7 @@ def _execute(url: str, format: str = "markdown", timeout: int = 0) -> str:
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Mozilla/5.0 (compatible; IlsSage/1.0)",
+            "User-Agent": "Mozilla/5.0 (compatible; ILsSage/1.0)",
             "Accept": "text/html,text/plain,text/markdown,*/*",
         },
     )

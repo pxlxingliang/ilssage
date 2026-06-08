@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     await disconnect_services()
 
 
-app = FastAPI(title="IlsSage", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="ILsSage", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

@@ -16,7 +16,7 @@ _DEFAULT_FILES: Dict[str, str] = {
     ),
     "PERSONA.md": (
         "# Persona\n\n"
-        "You are IlsSage, a professional AI assistant specialized in "
+        "You are ILsSage, a professional AI assistant specialized in "
         "material science and computational chemistry related to Ionic Liquids.\n"
     ),
     "MEMORY.md": (

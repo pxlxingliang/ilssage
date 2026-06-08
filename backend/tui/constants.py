@@ -1,6 +1,6 @@
 COMMAND_DESCRIPTIONS = {
-    "/exit": "Exit IlsSage",
-    "/quit": "Exit IlsSage",
+    "/exit": "Exit ILsSage",
+    "/quit": "Exit ILsSage",
     "/model": "Switch LLM model",
     "/help": "Show available commands",
     "/clear": "Start a new session",
@@ -11,7 +11,7 @@ COMMAND_DESCRIPTIONS = {
 def get_help_text() -> str:
     return (
         "Commands:\n"
-        "  /exit, /quit    Exit IlsSage\n"
+        "  /exit, /quit    Exit ILsSage\n"
         "  /model          Switch LLM model\n"
         "  /clear, /new    Start a new session\n"
         "  /help           Show this help\n"

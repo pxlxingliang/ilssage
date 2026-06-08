@@ -1,5 +1,5 @@
 {
-  "app": { "title": "IlsSage" },
+  "app": { "title": "ILsSage", "name": "ILsSage Agent" },
   "sidebar": {
     "newChat": "新建对话",
     "noSessions": "暂无会话",

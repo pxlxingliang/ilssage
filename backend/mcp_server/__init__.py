@@ -5,4 +5,4 @@ host = os.environ.get("ILSSAGE_MCP_HOST", "0.0.0.0")
 
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("IlsSage", port=port, host=host)
+mcp = FastMCP("ILsSage", port=port, host=host)

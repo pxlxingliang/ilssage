@@ -310,11 +310,16 @@ export function ChatPanel() {
         {messages.length === 0 && !streaming && (
           <div
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              height: "100%", color: "var(--text-muted)", fontSize: "14px",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              height: "100%", textAlign: "center",
             }}
           >
-            {t.chat.empty}
+            <div style={{ fontSize: "28px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "8px" }}>
+              {t.app.name}
+            </div>
+            <div style={{ fontSize: "14px", color: "var(--text-muted)" }}>
+              {t.chat.empty}
+            </div>
           </div>
         )}
 

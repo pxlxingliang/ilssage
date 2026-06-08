@@ -10,8 +10,7 @@ TITLE_PROMPT = (
 
 async def generate_title(content: str, llm_service) -> Optional[str]:
     if not content or not llm_service:
-        print(f"[generate_title] SKIP: content={bool(content)}, llm={bool(llm_service)}")
-        return None
+        return _fallback_title(content)
 
     trimmed = content.strip()
     if len(trimmed) > 1000:
@@ -33,11 +32,18 @@ async def generate_title(content: str, llm_service) -> Optional[str]:
         )
         print(f"[generate_title] LLM response: {result!r}")
         title = result.strip().strip('"').strip("'")
-        if not title or len(title) > 80:
-            print(f"[generate_title] REJECTED: title={title!r}, len={len(title)}")
-            return None
-        print(f"[generate_title] SUCCESS: {title!r}")
-        return title
-    except Exception as e:
-        print(f"[generate_title] EXCEPTION: {type(e).__name__}: {e}")
-        raise
+        if title and len(title) <= 80:
+            return title
+    except Exception:
+        pass
+
+    return _fallback_title(content)
+
+
+def _fallback_title(content: Optional[str]) -> Optional[str]:
+    if not content:
+        return None
+    title = content.strip().replace("\n", " ").replace("\r", "")
+    if len(title) > 10:
+        title = title[:10].rstrip() + "…"
+    return title or None
